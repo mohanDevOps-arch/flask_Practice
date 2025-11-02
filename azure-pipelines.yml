@@ -7,7 +7,7 @@ trigger:
 - main
 
 pool:
-  name: 'MyAgent' 
+  name: 'Test1' 
 
 strategy:
   matrix:
