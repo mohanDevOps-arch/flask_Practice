@@ -4,30 +4,33 @@ pipeline {
     stages {
         stage('Checkout') {
             steps {
-                git 'https://github.com/mohanDevOps-arch/flask_Practice.git'
+                git 'https://github.com/fancy1505/flask_Practice/edit'
             }
         }
 
         stage('Build') {
             steps {
-                sh 'python3 -m venv venv'
-                sh '. venv/bin/activate && pip install -r requirements.txt'
+                sh '''
+                python3 -m venv venv
+                . venv/bin/activate
+                pip install --upgrade pip
+                pip install -r requirements.txt
+                '''
             }
         }
 
         stage('Test') {
             steps {
-                sh '. venv/bin/activate && pytest || true'
+                sh '''
+                . venv/bin/activate
+                pytest
+                '''
             }
         }
 
         stage('Deploy') {
-            when {
-                branch 'main'
-            }
             steps {
-                echo "Deploying app..."
-                sh 'nohup python3 app.py &'
+                echo "Deploy stage (simulated)"
             }
         }
     }
