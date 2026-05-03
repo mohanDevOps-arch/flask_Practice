@@ -2,17 +2,12 @@ pipeline {
     agent any
 
     stages {
-
-        stage('Checkout') {
-            steps {
-                git branch: 'main', url: 'https://github.com/fancy1505/flask_Practice.git'
-            }
-        }
-
         stage('Build') {
             steps {
                 sh '''
-                python3 -m venv venv
+                if [ ! -d "venv" ]; then
+                    python3 -m venv venv
+                fi
                 venv/bin/pip install --upgrade pip
                 venv/bin/pip install -r requirements.txt
                 '''
@@ -22,17 +17,14 @@ pipeline {
         stage('Test') {
             steps {
                 sh '''
-                venv/bin/pytest
+                venv/bin/pytest -v
                 '''
             }
         }
 
         stage('Deploy') {
             steps {
-                echo "Deploy stage (simulated for CI/CD pipeline)"
-                sh '''
-                nohup venv/bin/python app.py > app.log 2>&1 &
-                '''
+                echo "Deploy stage (simulated)"
             }
         }
     }
