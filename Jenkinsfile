@@ -2,12 +2,6 @@ pipeline {
     agent any
 
     stages {
-        stage('Checkout') {
-            steps {
-                git 'https://github.com/fancy1505/flask_Practice/edit'
-            }
-        }
-
         stage('Build') {
             steps {
                 sh '''
@@ -30,7 +24,7 @@ pipeline {
 
         stage('Deploy') {
             steps {
-                echo "Deploy stage (simulated)"
+                echo "Deploy stage (simulated for CI/CD pipeline)"
             }
         }
     }
