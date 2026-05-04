@@ -18,10 +18,7 @@ jobs:
           - 27017:27017
 
     steps:
-    - name: Run Tests
-      env:
-        MONGO_URI: mongodb://localhost:27017/test_student_db
-      run: pytest
+    
 
     - name: Checkout Code
       uses: actions/checkout@v4
@@ -40,6 +37,11 @@ jobs:
 
     - name: Run Tests
       run: python -m pytest
+
+    - name: Run Tests
+      env:
+        MONGO_URI: mongodb://localhost:27017/test_student_db
+      run: pytest
 
   deploy-staging:
     needs: build-and-test
