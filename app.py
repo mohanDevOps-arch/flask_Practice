@@ -1,96 +1,137 @@
-from flask import Flask, render_template, request, redirect, url_for
-import os
+pipeline {
+    agent any
 
-app = Flask(__name__)
+    environment {
+        MONGO_URI = credentials('MONGO_URI')
+        EC2_HOST = '3.91.84.71'
+        EC2_USER = 'ubuntu'
+        APP_DIR = '/home/ubuntu/flask-app'
+    }
 
-# Secret key
-app.secret_key = "mysecretkey"
+    stages {
 
-# Detect testing mode
-TESTING = os.getenv("TESTING", "False") == "True"
+        stage('Clone') {
+            steps {
+                git branch: 'staging', url: 'https://github.com/fancy1505/flask_practice.git'
+            }
+        }
 
-# Only connect Mongo if NOT testing
-if not TESTING:
-    from flask_pymongo import PyMongo
-    from bson.objectid import ObjectId
-    import certifi
+        stage('Install Dependencies') {
+            steps {
+                sh '''
+                set -e
+                python3 -m venv venv
+                . venv/bin/activate
+                pip install --upgrade pip
+                pip install -r requirements.txt
+                pip install pytest pylint bandit
+                '''
+            }
+        }
 
-    app.config["MONGO_URI"] = os.getenv(
-        "MONGO_URI",
-        "mongodb+srv://FANCYKEJRIWAL:F%4015051996cy@cluster0.xxxxx.mongodb.net/testdb?retryWrites=true&w=majority"
-    )
+        stage('Code Quality') {
+            steps {
+                sh '''
+                set -e
+                . venv/bin/activate
 
-    mongo = PyMongo(app, tlsCAFile=certifi.where())
-else:
-    mongo = None
+                echo "🔍 Running pylint..."
+                pylint app.py || true
 
+                echo "🔐 Running bandit (excluding venv)..."
+                bandit -r . --exclude venv -s B104,B101
+                '''
+            }
+        }
 
-# ---------------- ROUTES ---------------- #
+        stage('Run Tests') {
+            steps {
+                sh '''
+                set -e
+                . venv/bin/activate
+                pytest -v
+                '''
+            }
+        }
 
-# Home page
-@app.route('/')
-def index():
-    if mongo:
-        students = mongo.db.students.find()
-        return render_template('index.html', students=students)
-    else:
-        return "Hello, Jenkins CI/CD!"
+        stage('Deploy to EC2 (Staging)') {
+            steps {
+                sshagent(['ec2-key']) {
+                    sh """
+                    ssh -o StrictHostKeyChecking=no $EC2_USER@$EC2_HOST "
+                        set -e
 
+                        echo '🚀 Jenkins Staging Deploy'
 
-# Add student
-@app.route('/add', methods=['GET', 'POST'])
-def add_student():
-    if not mongo:
-        return "DB not available in CI"
+                        if [ -d '$APP_DIR/.git' ]; then
+                          cd $APP_DIR
+                          git fetch origin
+                          git reset --hard origin/staging
+                        else
+                          git clone -b staging https://github.com/fancy1505/flask_practice.git $APP_DIR
+                          cd $APP_DIR
+                        fi
 
-    if request.method == 'POST':
-        name = request.form['name']
-        email = request.form['email']
-        course = request.form['course']
+                        echo '📦 Setting environment variables'
+                        echo 'MONGO_URI=${MONGO_URI}' > .env
 
-        mongo.db.students.insert_one({
-            "name": name,
-            "email": email,
-            "course": course
-        })
+                        echo '🐍 Setting up virtual environment'
+                        if [ ! -d 'venv' ]; then
+                            python3 -m venv venv
+                        fi
+                        source venv/bin/activate
 
-        return redirect(url_for('index'))
+                        pip install --upgrade pip
+                        pip install -r requirements.txt
+                        pip install gunicorn
 
-    return render_template('add_student.html')
+                        echo '🔄 Restarting services'
+                        sudo systemctl daemon-reload
+                        sudo systemctl restart flask-app
+                        sudo systemctl restart nginx
 
+                        echo '✅ Deployment Done'
+                    "
+                    """
+                }
+            }
+        }
+    }
 
-# Update student
-@app.route('/update/<student_id>', methods=['GET', 'POST'])
-def update_student(student_id):
-    if not mongo:
-        return "DB not available in CI"
+    post {
+        success {
+            echo '✅ Pipeline succeeded'
 
-    student = mongo.db.students.find_one({"_id": ObjectId(student_id)})
+            emailext (
+                subject: "✅ SUCCESS: ${env.JOB_NAME} #${env.BUILD_NUMBER}",
+                body: """
+Build SUCCESS!
 
-    if request.method == 'POST':
-        mongo.db.students.update_one(
-            {"_id": ObjectId(student_id)},
-            {"$set": {
-                "name": request.form['name'],
-                "email": request.form['email'],
-                "course": request.form['course']
-            }}
-        )
-        return redirect(url_for('index'))
+Job: ${env.JOB_NAME}
+Build Number: ${env.BUILD_NUMBER}
+Branch: ${env.BRANCH_NAME}
 
-    return render_template('update_student.html', student=student)
+Check details: ${env.BUILD_URL}
+""",
+                to: "dzinesfactory@gmail.com"
+            )
+        }
 
+        failure {
+            echo '❌ Pipeline failed'
 
-# Delete student
-@app.route('/delete/<student_id>')
-def delete_student(student_id):
-    if not mongo:
-        return "DB not available in CI"
+            emailext (
+                subject: "❌ FAILURE: ${env.JOB_NAME} #${env.BUILD_NUMBER}",
+                body: """
+Build FAILED!
 
-    mongo.db.students.delete_one({"_id": ObjectId(student_id)})
-    return redirect(url_for('index'))
+Job: ${env.JOB_NAME}
+Build Number: ${env.BUILD_NUMBER}
 
-
-# Run app
-if __name__ == '__main__':
-    app.run(host="0.0.0.0", port=5000, debug=True)
+Check logs: ${env.BUILD_URL}
+""",
+                to: "dzinesfactory@gmail.com"
+            )
+        }
+    }
+}
