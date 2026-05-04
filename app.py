@@ -1,7 +1,4 @@
-import os
 
-if not os.environ.get("TESTING"):
-    mongo = PyMongo(app, tlsCAFile=certifi.where())
 pipeline {
     agent any
 
