@@ -19,9 +19,9 @@ jobs:
 
     steps:
     - name: Run Tests
-        env:
+      env:
         MONGO_URI: mongodb://localhost:27017/test_student_db
-        run: pytest
+      run: pytest
 
     - name: Checkout Code
       uses: actions/checkout@v4
