@@ -34,11 +34,12 @@ jobs:
     - name: Install Dependencies
       run: |
         python -m pip install --upgrade pip
-        pip install -r requirements.txt || true
-        pip install pytest
+        pip install -r requirements.txt
+        python -m pip install pytest
+        python -m pip list
 
     - name: Run Tests
-      run: pytest
+      run: python -m pytest
 
   deploy-staging:
     needs: build-and-test
