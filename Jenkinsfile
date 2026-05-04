@@ -31,7 +31,8 @@ pipeline {
             steps {
                 sh '''
                 echo "Deploying application..."
-                nohup python3 app.py &
+                . venv/bin/activate
+		nohup python app.py &
                 '''
             }
         }
