@@ -40,14 +40,16 @@ pipeline {
 
     post {
         success {
-            mail to: 'hanusaimadhava@gmail.com',
-                 subject: "SUCCESS: Jenkins Pipeline",
-                 body: "Build and deployment successful."
+		echo "sucess"
+            //mail to: 'hanusaimadhava@gmail.com',
+                // subject: "SUCCESS: Jenkins Pipeline",
+              //   body: "Build and deployment successful."
         }
         failure {
-            mail to: 'hanusaimadhava@gmail.com',
-                 subject: "FAILED: Jenkins Pipeline",
-                 body: "Build failed. Check Jenkins logs."
+		echo "fail"
+            //mail to: 'hanusaimadhava@gmail.com',
+                 //subject: "FAILED: Jenkins Pipeline",
+                 //body: "Build failed"
         }
     }
 }
