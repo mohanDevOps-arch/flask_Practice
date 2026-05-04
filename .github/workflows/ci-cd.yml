@@ -4,7 +4,7 @@ on:
   push:
     branches:
       - main
-      - staging
+      - stage
   release:
     types: [created]
 
@@ -43,7 +43,7 @@ jobs:
 
   deploy-staging:
     needs: build-and-test
-    if: github.ref == 'refs/heads/staging'
+    if: github.ref == 'refs/heads/stage'
     runs-on: ubuntu-latest
 
     steps:
