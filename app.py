@@ -1,65 +1,138 @@
-from flask import Flask, render_template, request, redirect, url_for
-from flask_pymongo import PyMongo
-from bson.objectid import ObjectId
-from dotenv import load_dotenv
-import certifi
-import os
 
-# Load env vars
-load_dotenv()
+pipeline {
+    agent any
 
-app = Flask(__name__)
-app.config["MONGO_URI"] = os.getenv("MONGO_URI")
-app.secret_key = os.getenv("SECRET_KEY")
+    environment {
+        MONGO_URI = credentials('MONGO_URI')
+        EC2_HOST = '3.91.84.71'
+        EC2_USER = 'ubuntu'
+        APP_DIR = '/home/ubuntu/flask-app'
+    }
 
-# Use certifi CA bundle explicitly for cross-platform TLS reliability
-# (notably fixes common macOS certificate verification failures).
-mongo = PyMongo(app, tlsCAFile=certifi.where())
+    stages {
 
-# Home page -> list students
-@app.route('/')
-def index():
-    students = mongo.db.students.find()
-    return render_template('index.html', students=students)
+        stage('Clone') {
+            steps {
+                git branch: 'staging', url: 'https://github.com/fancy1505/flask_practice.git'
+            }
+        }
 
-# Add student
-@app.route('/add', methods=['GET', 'POST'])
-def add_student():
-    if request.method == 'POST':
-        name = request.form['name']
-        email = request.form['email']
-        course = request.form['course']
-        mongo.db.students.insert_one({
-            "name": name,
-            "email": email,
-            "course": course
-        })
-        return redirect(url_for('index'))
-    return render_template('add_student.html')
+        stage('Install Dependencies') {
+            steps {
+                sh '''
+                set -e
+                python3 -m venv venv
+                . venv/bin/activate
+                pip install --upgrade pip
+                pip install -r requirements.txt
+                pip install pytest pylint bandit
+                '''
+            }
+        }
 
-# Update student
-@app.route('/update/<student_id>', methods=['GET', 'POST'])
-def update_student(student_id):
-    student = mongo.db.students.find_one({"_id": ObjectId(student_id)})
-    if request.method == 'POST':
-        new_name = request.form['name']
-        new_email = request.form['email']
-        new_course = request.form['course']
-        mongo.db.students.update_one(
-            {"_id": ObjectId(student_id)},
-            {"$set": {"name": new_name, "email": new_email, "course": new_course}}
-        )
-        return redirect(url_for('index'))
-    return render_template('update_student.html', student=student)
+        stage('Code Quality') {
+            steps {
+                sh '''
+                set -e
+                . venv/bin/activate
 
+                echo "🔍 Running pylint..."
+                pylint app.py || true
 
-# Delete student
-@app.route('/delete/<student_id>')
-def delete_student(student_id):
-    mongo.db.students.delete_one({"_id": ObjectId(student_id)})
-    return redirect(url_for('index'))
+                echo "🔐 Running bandit (excluding venv)..."
+                bandit -r . --exclude venv -s B104,B101
+                '''
+            }
+        }
 
-if __name__ == '__main__':
-    app.run(host="0.0.0.0", debug=True, port=5000)
+        stage('Run Tests') {
+            steps {
+                sh '''
+                set -e
+                . venv/bin/activate
+                pytest -v
+                '''
+            }
+        }
 
+        stage('Deploy to EC2 (Staging)') {
+            steps {
+                sshagent(['ec2-key']) {
+                    sh """
+                    ssh -o StrictHostKeyChecking=no $EC2_USER@$EC2_HOST "
+                        set -e
 
+                        echo '🚀 Jenkins Staging Deploy'
+
+                        if [ -d '$APP_DIR/.git' ]; then
+                          cd $APP_DIR
+                          git fetch origin
+                          git reset --hard origin/staging
+                        else
+                          git clone -b staging https://github.com/fancy1505/flask_practice.git $APP_DIR
+                          cd $APP_DIR
+                        fi
+
+                        echo '📦 Setting environment variables'
+                        echo 'MONGO_URI=${MONGO_URI}' > .env
+
+                        echo '🐍 Setting up virtual environment'
+                        if [ ! -d 'venv' ]; then
+                            python3 -m venv venv
+                        fi
+                        source venv/bin/activate
+
+                        pip install --upgrade pip
+                        pip install -r requirements.txt
+                        pip install gunicorn
+
+                        echo '🔄 Restarting services'
+                        sudo systemctl daemon-reload
+                        sudo systemctl restart flask-app
+                        sudo systemctl restart nginx
+
+                        echo '✅ Deployment Done'
+                    "
+                    """
+                }
+            }
+        }
+    }
+
+    post {
+        success {
+            echo '✅ Pipeline succeeded'
+
+            emailext (
+                subject: "✅ SUCCESS: ${env.JOB_NAME} #${env.BUILD_NUMBER}",
+                body: """
+Build SUCCESS!
+
+Job: ${env.JOB_NAME}
+Build Number: ${env.BUILD_NUMBER}
+Branch: ${env.BRANCH_NAME}
+
+Check details: ${env.BUILD_URL}
+""",
+                to: "dzinesfactory@gmail.com"
+            )
+        }
+
+        failure {
+            echo '❌ Pipeline failed'
+
+            emailext (
+                subject: "❌ FAILURE: ${env.JOB_NAME} #${env.BUILD_NUMBER}",
+                body: """
+Build FAILED!
+
+Job: ${env.JOB_NAME}
+Build Number: ${env.BUILD_NUMBER}
+
+Check logs: ${env.BUILD_URL}
+""",
+                to: "dzinesfactory@gmail.com"
+            )
+        }
+    }
+}
