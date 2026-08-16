@@ -1,0 +1,318 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>flask_Practice · CI/CD Assignment</title>
+  <style>
+    :root {
+      --bg: #0f1220;
+      --surface: #171a2e;
+      --surface-2: #1f2340;
+      --border: #2a2f52;
+      --fg: #e6e8ff;
+      --fg-muted: #9aa0c9;
+      --accent: #7c8cff;
+      --accent-2: #4fd1c5;
+      --danger: #ff7a90;
+      --ok: #57e6a4;
+      --mono: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, monospace;
+    }
+    @media (prefers-color-scheme: light) {
+      :root {
+        --bg: #f7f8fc;
+        --surface: #ffffff;
+        --surface-2: #f0f2fa;
+        --border: #dfe3f2;
+        --fg: #1a1e3a;
+        --fg-muted: #5a6285;
+        --accent: #4a5bff;
+        --accent-2: #0aa89b;
+        --danger: #d63d59;
+        --ok: #0e9f6e;
+      }
+    }
+    * { box-sizing: border-box; }
+    html, body { margin: 0; padding: 0; }
+    body {
+      background: var(--bg);
+      color: var(--fg);
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+      line-height: 1.55;
+      -webkit-font-smoothing: antialiased;
+    }
+    main { max-width: 1000px; margin: 0 auto; padding: 3rem 1.5rem 6rem; }
+    header {
+      margin-bottom: 2.5rem;
+      padding-bottom: 1.5rem;
+      border-bottom: 1px solid var(--border);
+    }
+    h1 { font-size: 2rem; margin: 0 0 .25rem; letter-spacing: -0.02em; }
+    h2 { font-size: 1.35rem; margin: 2.5rem 0 1rem; letter-spacing: -0.01em; }
+    h3 { font-size: 1.05rem; margin: 1.5rem 0 .5rem; color: var(--fg-muted); text-transform: uppercase; letter-spacing: .05em; font-weight: 600; }
+    p, li { color: var(--fg); }
+    small, .muted { color: var(--fg-muted); }
+    code, pre, .mono { font-family: var(--mono); }
+    code { background: var(--surface-2); padding: .1em .35em; border-radius: 4px; font-size: .9em; }
+    pre {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      padding: 1rem 1.15rem;
+      border-radius: 8px;
+      overflow-x: auto;
+      font-size: .82rem;
+      line-height: 1.5;
+    }
+    pre code { background: transparent; padding: 0; }
+    a { color: var(--accent); text-decoration: none; }
+    a:hover { text-decoration: underline; }
+    .subtitle { color: var(--fg-muted); font-size: 1.05rem; margin: 0; }
+    .badges { display: flex; flex-wrap: wrap; gap: .4rem; margin-top: 1rem; }
+    .badge {
+      display: inline-block;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      color: var(--fg-muted);
+      padding: .2rem .55rem;
+      border-radius: 999px;
+      font-size: .78rem;
+      font-family: var(--mono);
+    }
+    .grid { display: grid; gap: 1rem; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); }
+    .card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 1rem 1.15rem;
+    }
+    .card h4 { margin: 0 0 .35rem; font-size: .95rem; }
+    .card p { margin: 0; color: var(--fg-muted); font-size: .9rem; }
+    .stages {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+      gap: .5rem;
+      counter-reset: stage;
+    }
+    .stage {
+      position: relative;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 1rem .85rem .85rem;
+      font-size: .88rem;
+    }
+    .stage::before {
+      counter-increment: stage;
+      content: counter(stage);
+      position: absolute; top: -.5rem; left: -.5rem;
+      background: var(--accent); color: white;
+      width: 1.4rem; height: 1.4rem; border-radius: 50%;
+      display: flex; align-items: center; justify-content: center;
+      font-family: var(--mono); font-size: .75rem; font-weight: bold;
+    }
+    .stage strong { display: block; margin-bottom: .15rem; }
+    .stage small { color: var(--fg-muted); }
+    table { width: 100%; border-collapse: collapse; margin: .5rem 0 1rem; font-size: .9rem; }
+    th, td { text-align: left; padding: .55rem .75rem; border-bottom: 1px solid var(--border); }
+    th { color: var(--fg-muted); font-weight: 600; font-size: .82rem; text-transform: uppercase; letter-spacing: .04em; }
+    tr:last-child td { border-bottom: 0; }
+    td.right { text-align: right; font-family: var(--mono); }
+    .arch { font-size: .78rem; line-height: 1.4; }
+    ol.setup { padding-left: 1.2rem; }
+    ol.setup li { margin-bottom: .8rem; }
+    kbd {
+      font-family: var(--mono);
+      background: var(--surface-2);
+      border: 1px solid var(--border);
+      padding: .05em .35em;
+      border-radius: 4px;
+      font-size: .82em;
+    }
+    footer { margin-top: 4rem; padding-top: 1.5rem; border-top: 1px solid var(--border); color: var(--fg-muted); font-size: .85rem; }
+  </style>
+</head>
+<body>
+<main>
+
+  <header>
+    <h1>flask_Practice · CI/CD Assignment</h1>
+    <p class="subtitle">A working CI/CD pipeline from <code>git push</code> to a live container on EC2 — with test, build, ECR push, deploy, health check, and SNS notification.</p>
+    <div class="badges">
+      <span class="badge">Python 3.12</span>
+      <span class="badge">Flask</span>
+      <span class="badge">MongoDB Atlas</span>
+      <span class="badge">Docker</span>
+      <span class="badge">GitHub Actions</span>
+      <span class="badge">AWS ECR</span>
+      <span class="badge">AWS EC2</span>
+      <span class="badge">AWS SSM</span>
+      <span class="badge">Ansible</span>
+      <span class="badge">Terraform</span>
+      <span class="badge">Amazon SNS</span>
+    </div>
+  </header>
+
+  <section>
+    <h2>What this is</h2>
+    <p>Forked from <a href="https://github.com/mohanDevOps-arch/flask_Practice">mohanDevOps-arch/flask_Practice</a>. A small Flask + MongoDB "student registration" app becomes the vehicle for a real CI/CD pipeline:</p>
+    <ul>
+      <li>Every push to <code>main</code> runs pytest, builds a Docker image tagged with the commit SHA, pushes to ECR, and deploys onto EC2.</li>
+      <li>Deployment happens over <strong>SSM</strong> (no SSH, no port 22) using the built-in <code>AWS-ApplyAnsiblePlaybooks</code> document — SSM pulls this repo onto the instance and runs an <strong>Ansible</strong> playbook there.</li>
+      <li>Runtime secrets live in <strong>SSM Parameter Store</strong> as SecureString and are fetched on the instance, never transiting the CI runner.</li>
+      <li>A <code>/health</code> endpoint is the real deploy gate — the pipeline only reports success if it returns <code>200 {"status":"healthy"}</code>.</li>
+      <li>Success/failure notifications go through an SNS topic with tailored subject + body.</li>
+    </ul>
+  </section>
+
+  <section>
+    <h2>Architecture</h2>
+    <pre class="arch">
+Developer
+   │ git push main
+   ▼
+┌──────────────────────────────────────────────────────────────┐
+│ GitHub Actions (immrdg/flask_Practice)                       │
+│   1 checkout → 2 install → 3 pytest (mongo service)          │
+│   4 docker build (tag = SHA) → 5 push ECR                    │
+│   6 SSM send-command · AWS-ApplyAnsiblePlaybooks             │
+│   7 curl /health from the internet                           │
+│   8 SNS publish · success or failure                         │
+└──────────────┬────────────────────────────────┬──────────────┘
+               │ IAM user (access key)          │ sns:Publish
+               ▼                                ▼
+┌──────────────────────────────────┐   ┌────────────────────┐
+│ AWS (us-east-1) via Terraform    │   │ Amazon SNS         │
+│                                  │   │ CI topic + email   │
+│   ┌───────┐    ┌────────────────┐│   └────────────────────┘
+│   │  ECR  │    │ SSM            ││
+│   │ repo  │    │ AWS-ApplyAnsi- ││
+│   └───┬───┘    │ blePlaybooks   ││
+│       │ pull   └──────┬─────────┘│
+│       ▼               │ fetch playbook + run
+│   ┌────────────────────────────┐ │
+│   │ EC2 t3.micro (AL2023)      │ │
+│   │  · IAM: SSM + ECR read     │ │
+│   │       + ssm:GetParameter   │ │
+│   │  · Ansible: pull / stop /  │ │
+│   │    run / verify /health    │ │
+│   │  · docker run flask_app    │ │
+│   │  · EIP → stable EC2_HOST   │ │
+│   └────────────┬───────────────┘ │
+│                │ Atlas over TLS  │
+└────────────────┼─────────────────┘
+                 ▼
+        ┌────────────────────┐
+        │ MongoDB Atlas M0   │
+        │  cluster: hv-aws   │
+        └────────────────────┘</pre>
+  </section>
+
+  <section>
+    <h2>Pipeline stages</h2>
+    <div class="stages">
+      <div class="stage"><strong>Checkout</strong><small>Latest source on push to <code>main</code>.</small></div>
+      <div class="stage"><strong>Install</strong><small><code>pip install -r requirements.txt</code>.</small></div>
+      <div class="stage"><strong>Test</strong><small><code>pytest</code> against a Mongo service container. Fails the build.</small></div>
+      <div class="stage"><strong>Build</strong><small><code>docker build</code>, tagged with the commit SHA.</small></div>
+      <div class="stage"><strong>Push ECR</strong><small>Authenticated ECR push (SHA tag + <code>latest</code>).</small></div>
+      <div class="stage"><strong>Deploy</strong><small>SSM ↦ Ansible playbook on the tagged EC2. Idempotent.</small></div>
+      <div class="stage"><strong>Verify</strong><small>External <code>curl /health</code> retries with hard fail.</small></div>
+      <div class="stage"><strong>Notify</strong><small>SNS publish. Failure email names the failed stage.</small></div>
+    </div>
+  </section>
+
+  <section>
+    <h2>Repo layout</h2>
+    <pre><code>flask_Practice/
+├── app.py                       # Flask app + /health
+├── test_app.py                  # pytest suite
+├── requirements.txt
+├── Dockerfile
+├── .dockerignore
+├── .env / .env.example
+├── templates/                   # existing HTML views (untouched)
+│
+├── .github/workflows/ci-cd.yml  # 174 lines — 8-stage pipeline
+│
+├── infra/
+│   ├── ansible/deploy.yml       # runs on EC2 via AWS-ApplyAnsiblePlaybooks
+│   └── terraform/               # ECR, EC2, IAM, SNS, Parameter Store
+│
+└── scripts/notify.sh            # SNS publish helper (only script)</code></pre>
+  </section>
+
+  <section>
+    <h2>Getting started</h2>
+    <ol class="setup">
+      <li>
+        <strong>Fork &amp; clone</strong> — <code>gh repo fork mohanDevOps-arch/flask_Practice --clone</code>.
+      </li>
+      <li>
+        <strong>Provision AWS</strong> —
+        <pre><code>cd infra/terraform
+cp terraform.tfvars.example terraform.tfvars   # fill mongo_uri, secret_key, notify_emails
+terraform init &amp;&amp; terraform apply</code></pre>
+      </li>
+      <li>
+        <strong>Push outputs into GitHub secrets</strong> — copy the <code>gh secret set …</code> block from <code>infra/terraform/README.md</code>.
+      </li>
+      <li>
+        <strong>Confirm the SNS email</strong> — AWS sends a one-time "Confirm subscription" link to each address in <code>notify_emails</code>.
+      </li>
+      <li>
+        <strong>Push a change</strong> — the pipeline runs on <code>main</code>, deploys the image, and emails the outcome.
+      </li>
+      <li>
+        <strong>Test the failure path</strong> — break a test intentionally to receive a failure email with the correct stage name.
+      </li>
+    </ol>
+  </section>
+
+  <section>
+    <h2>Grading coverage</h2>
+    <table>
+      <thead>
+        <tr><th>Rubric item</th><th class="right">Weight</th><th>Covered by</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>Stages present in order; test gates build/deploy</td><td class="right">25%</td><td><code>ci-cd.yml</code></td></tr>
+        <tr><td>Docker image tagged with commit SHA</td><td class="right">15%</td><td>build step uses <code>${GITHUB_SHA::12}</code></td></tr>
+        <tr><td>Image pushed to ECR</td><td class="right">10%</td><td>ECR login + <code>docker push</code></td></tr>
+        <tr><td>EC2 deployment replaces the running container</td><td class="right">20%</td><td>Ansible stop/rm/run tasks</td></tr>
+        <tr><td>Health check genuinely gates success/failure</td><td class="right">10%</td><td>Ansible <code>uri</code> + external verify step</td></tr>
+        <tr><td>Customized email content on both paths</td><td class="right">15%</td><td><code>scripts/notify.sh</code> via SNS</td></tr>
+        <tr><td>README quality</td><td class="right">5%</td><td>Top-level <code>README.md</code></td></tr>
+      </tbody>
+    </table>
+  </section>
+
+  <section>
+    <h2>Trade-offs called out</h2>
+    <div class="grid">
+      <div class="card">
+        <h4>Static access keys, not OIDC</h4>
+        <p>Simpler setup; the GHA secret access key lives in Terraform state. Rotate with <code>terraform apply -replace=aws_iam_access_key.gha</code>.</p>
+      </div>
+      <div class="card">
+        <h4>Single EC2, no load balancer</h4>
+        <p>Matches the assignment brief. Deploy has a brief moment of downtime during <code>docker stop → run</code>.</p>
+      </div>
+      <div class="card">
+        <h4>Runtime secrets in Parameter Store</h4>
+        <p>MONGO_URI / SECRET_KEY never touch the CI runner or CloudTrail command params. Ansible fetches them on the target.</p>
+      </div>
+      <div class="card">
+        <h4>Local Terraform state</h4>
+        <p>Fine for a lab. Move to S3 + DynamoDB lock for team use.</p>
+      </div>
+    </div>
+  </section>
+
+  <footer>
+    Rendered as static HTML — open this file directly in a browser.
+    Source of truth lives in the neighbouring Markdown, YAML, HCL, and Python files.
+  </footer>
+
+</main>
+</body>
+</html>
