@@ -101,7 +101,7 @@ pipeline {
   post {
     success {
       emailext(
-        subject: "✅ SUCCESS: flask-mongo-cicd #${env.BUILD_NUMBER}",
+        subject: "✅ SUCCESS : flask-mongo-cicd #${env.BUILD_NUMBER}",
         to: "${NOTIFY_EMAIL}",
         mimeType: 'text/html',
         body: """
