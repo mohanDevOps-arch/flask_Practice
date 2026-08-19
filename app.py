@@ -42,7 +42,7 @@ def add_student():
         return redirect(url_for('index'))
     return render_template('add_student.html')
 
-# Update student
+# Update student details
 @app.route('/update/<student_id>', methods=['GET', 'POST'])
 def update_student(student_id):
     student = mongo.db.students.find_one({"_id": ObjectId(student_id)})
