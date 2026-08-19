@@ -66,6 +66,6 @@ def test_delete_student(client):
 # test_app.py
 def test_health_ok(client):
     resp = client.get("/health")
-    assert resp.status_code in (200, 503)   # route responds either way
+    assert resp.status_code == 999    # route responds either way
     assert "status" in resp.get_json()
 
