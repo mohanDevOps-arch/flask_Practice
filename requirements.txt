@@ -7,3 +7,4 @@ pytest
 pylint
 bandit
 black
+gunicorn

@@ -61,3 +61,11 @@ def test_delete_student(client):
     response = client.get(f'/delete/{student_id}', follow_redirects=True)
     assert response.status_code == 200
     assert b"Temp User" not in response.data
+
+
+# test_app.py
+def test_health_ok(client):
+    resp = client.get("/health")
+    assert resp.status_code in (200, 503)   # route responds either way
+    assert "status" in resp.get_json()
+

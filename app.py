@@ -1,20 +1,25 @@
-from flask import Flask, render_template, request, redirect, url_for
+from flask import Flask, render_template, request, redirect, url_for, jsonify
 from flask_pymongo import PyMongo
 from bson.objectid import ObjectId
 from dotenv import load_dotenv
 import certifi
 import os
 
-# Load env vars
+# Load environment variables from .env file
 load_dotenv()
 
 app = Flask(__name__)
-app.config["MONGO_URI"] = os.getenv("MONGO_URI")
-app.secret_key = os.getenv("SECRET_KEY")
+app.config["MONGO_URI"] = os.getenv("MONGO_URI")   # MongoDB connection string
+app.secret_key = os.getenv("SECRET_KEY")           # Flask secret key for sessions
 
-# Use certifi CA bundle explicitly for cross-platform TLS reliability
-# (notably fixes common macOS certificate verification failures).
+# Use certifi CA bundle explicitly for TLS reliability (fixes macOS SSL issues)
 mongo = PyMongo(app, tlsCAFile=certifi.where())
+
+# ✅ Health/status endpoint
+# Used by deployment scripts or AWS load balancer to confirm app is running
+@app.route("/health")
+def health():
+    return jsonify(status="UP"), 200
 
 # Home page -> list students
 @app.route('/')
@@ -52,7 +57,6 @@ def update_student(student_id):
         return redirect(url_for('index'))
     return render_template('update_student.html', student=student)
 
-
 # Delete student
 @app.route('/delete/<student_id>')
 def delete_student(student_id):
@@ -60,6 +64,5 @@ def delete_student(student_id):
     return redirect(url_for('index'))
 
 if __name__ == '__main__':
+    # Run app on all interfaces, port 5000, with debug enabled
     app.run(host="0.0.0.0", debug=True, port=5000)
-
-
