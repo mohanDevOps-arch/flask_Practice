@@ -6,16 +6,24 @@ pipeline {
     ECR_REPO     = credentials('ecr-repo-name')
     EC2_HOST     = credentials('ec2-app-host')
     MONGO_URI    = credentials('mongo-uri')
-    NOTIFY_EMAIL = credentials('notify-email')
-    IMAGE_TAG    = "${env.GIT_COMMIT.take(7)}"
-    FAILED_STAGE = ''
     AWS_REGION   = 'us-east-1'
+    NOTIFY_EMAIL = 'shabdadhankkb@gmail.com'
+    FAILED_STAGE = ''
   }
 
   stages {
 
     stage('Checkout') {
-      steps { checkout scm }
+      steps {
+        script { env.FAILED_STAGE = 'Checkout' }
+        checkout scm
+        script {
+          // Captured AFTER checkout, not in environment{} — GIT_COMMIT doesn't
+          // exist yet when environment{} is evaluated, which caused the
+          // "IMAGE_TAG has issues" error earlier.
+          env.IMAGE_TAG = sh(script: 'git rev-parse --short HEAD', returnStdout: true).trim()
+        }
+      }
     }
 
     stage('Install dependencies') {
@@ -69,8 +77,8 @@ pipeline {
                 docker pull ${ECR_REGISTRY}/${ECR_REPO}:${IMAGE_TAG} &&
                 docker stop flask-app || true &&
                 docker rm flask-app || true &&
-                docker run -d --name flask-app -p 5000:5000 \
-                  --restart unless-stopped \
+                docker run -d --name flask-app --restart unless-stopped \
+                  -p 5000:5000 \
                   -e MONGO_URI="${MONGO_URI}" \
                   ${ECR_REGISTRY}/${ECR_REPO}:${IMAGE_TAG}
               '
@@ -80,14 +88,14 @@ pipeline {
       }
     }
 
-    stage('Verify') {
+    stage('Verify deployment') {
       steps {
         script {
-          env.FAILED_STAGE = 'Verify (health check)'
+          env.FAILED_STAGE = 'Verify'
           sh """
             for i in 1 2 3 4 5; do
               sleep 5
-              STATUS=\$(curl -s -o /dev/null -w "%{http_code}" http://${EC2_HOST}:5000/health)
+              STATUS=\$(curl -s -o /dev/null -w '%{http_code}' http://${EC2_HOST}:5000/health)
               if [ "\$STATUS" = "200" ]; then exit 0; fi
             done
             echo "Health check failed after 5 attempts"
@@ -101,28 +109,27 @@ pipeline {
   post {
     success {
       emailext(
-        subject: "✅ SUCCESS : flask-mongo-cicd #${env.BUILD_NUMBER}",
+        subject: "✅ SUCCESS: flask_Practice #${env.BUILD_NUMBER} deployed",
         to: "${NOTIFY_EMAIL}",
         mimeType: 'text/html',
         body: """
           <h2 style='color:#1E7B4D;'>Deployment Succeeded</h2>
-          <p><b>Commit:</b> ${env.GIT_COMMIT}</p>
+          <p><b>Commit:</b> ${env.IMAGE_TAG}</p>
           <p><b>Image:</b> ${ECR_REGISTRY}/${ECR_REPO}:${IMAGE_TAG}</p>
           <p><b>Deployed to:</b> ${EC2_HOST}</p>
-          <p><b>Pipeline run:</b> <a href='${env.BUILD_URL}'>${env.BUILD_URL}</a></p>
+          <p><b>Run URL:</b> <a href='${env.BUILD_URL}'>${env.BUILD_URL}</a></p>
         """
       )
     }
     failure {
       emailext(
-        subject: "❌ FAILURE: flask-mongo-cicd #${env.BUILD_NUMBER} — ${env.FAILED_STAGE} stage",
+        subject: "❌ FAILED: flask_Practice #${env.BUILD_NUMBER} — ${env.FAILED_STAGE} stage",
         to: "${NOTIFY_EMAIL}",
         mimeType: 'text/html',
         body: """
           <h2 style='color:#B3261E;'>Deployment Failed</h2>
           <p><b>Failed stage:</b> ${env.FAILED_STAGE}</p>
-          <p><b>Commit:</b> ${env.GIT_COMMIT}</p>
-          <p><b>Logs:</b> <a href='${env.BUILD_URL}console'>${env.BUILD_URL}console</a></p>
+          <p><b>Run URL:</b> <a href='${env.BUILD_URL}console'>${env.BUILD_URL}console</a></p>
         """
       )
     }
