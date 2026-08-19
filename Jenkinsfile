@@ -18,10 +18,9 @@ pipeline {
         script { env.FAILED_STAGE = 'Checkout' }
         checkout scm
         script {
-          // Captured AFTER checkout, not in environment{} — GIT_COMMIT doesn't
-          // exist yet when environment{} is evaluated, which caused the
-          // "IMAGE_TAG has issues" error earlier.
           env.IMAGE_TAG = sh(script: 'git rev-parse --short HEAD', returnStdout: true).trim()
+          env.GIT_COMMIT = sh(script: 'git rev-parse HEAD', returnStdout: true).trim()
+          env.GIT_BRANCH = sh(script: 'git rev-parse --abbrev-ref HEAD', returnStdout: true).trim()
         }
       }
     }
@@ -114,9 +113,10 @@ pipeline {
         mimeType: 'text/html',
         body: """
           <h2 style='color:#1E7B4D;'>Deployment Succeeded</h2>
-          <p><b>Commit:</b> ${env.IMAGE_TAG}</p>
-          <p><b>Image:</b> ${ECR_REGISTRY}/${ECR_REPO}:${IMAGE_TAG}</p>
-          <p><b>Deployed to:</b> ${EC2_HOST}</p>
+          <p><b>Branch:</b> ${env.GIT_BRANCH}</p>
+          <p><b>Commit SHA:</b> ${env.GIT_COMMIT}</p>
+          <p><b>Image Tag:</b> ${ECR_REGISTRY}/${ECR_REPO}:${IMAGE_TAG}</p>
+          <p><b>EC2 Target:</b> ${EC2_HOST}</p>
           <p><b>Run URL:</b> <a href='${env.BUILD_URL}'>${env.BUILD_URL}</a></p>
         """
       )
@@ -128,7 +128,9 @@ pipeline {
         mimeType: 'text/html',
         body: """
           <h2 style='color:#B3261E;'>Deployment Failed</h2>
-          <p><b>Failed stage:</b> ${env.FAILED_STAGE}</p>
+          <p><b>Failed Stage:</b> ${env.FAILED_STAGE}</p>
+          <p><b>Branch:</b> ${env.GIT_BRANCH}</p>
+          <p><b>Commit SHA:</b> ${env.GIT_COMMIT}</p>
           <p><b>Run URL:</b> <a href='${env.BUILD_URL}console'>${env.BUILD_URL}console</a></p>
         """
       )
