@@ -130,7 +130,7 @@ jobs:
             --arg proj     "$PROJECT_TAG" \
             '{
               SourceType:          ["GitHub"],
-              SourceInfo:          [( {owner:$owner, repository:$repo, getOptions:("commit:"+$commit)} | tostring )],
+              SourceInfo:          [( {owner:$owner, repository:$repo, getOptions:("commitID:"+$commit)} | tostring )],
               InstallDependencies: ["True"],
               PlaybookFile:        ["infra/ansible/deploy.yml"],
               ExtraVariables:      [("image_registry="+$registry+" image_repo="+$image+" image_tag="+$tag+" aws_region="+$region+" project_name="+$proj)]
