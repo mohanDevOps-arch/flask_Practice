@@ -1,10 +1,14 @@
 ---
 # Ansible playbook run on the EC2 target by SSM (AWS-ApplyAnsiblePlaybooks).
 #
-# Extra-vars passed by the pipeline:
-#   image_uri     — full ECR image URI, e.g. 1234.dkr.ecr.us-east-1.amazonaws.com/flask-practice:<sha>
-#   aws_region    — region for ECR + Parameter Store (defaults to us-east-1)
-#   project_name  — used to build SSM Parameter Store paths (defaults to flask-practice)
+# Extra-vars passed by the pipeline (SSM rejects ':' in ExtraVariables
+# values, so the image URI is split into three colonless pieces and
+# reassembled here):
+#   image_registry — e.g. 1234.dkr.ecr.us-east-1.amazonaws.com
+#   image_repo     — e.g. flask-practice
+#   image_tag      — e.g. <short commit sha>
+#   aws_region     — region for ECR + Parameter Store (defaults to us-east-1)
+#   project_name   — used to build SSM Parameter Store paths
 - name: Deploy flask app container
   hosts: localhost
   connection: local
@@ -14,15 +18,19 @@
   vars:
     aws_region: "{{ aws_region | default('us-east-1') }}"
     project_name: "{{ project_name | default('flask-practice') }}"
+    image_uri: "{{ image_registry }}/{{ image_repo }}:{{ image_tag }}"
     container_name: flask_app
     app_port: 5000
     health_url: "http://127.0.0.1:{{ app_port }}/health"
 
   tasks:
-    - name: Assert image_uri was provided
+    - name: Assert image parts were provided
       ansible.builtin.assert:
-        that: image_uri is defined and image_uri | length > 0
-        fail_msg: "image_uri extra-var is required"
+        that:
+          - image_registry is defined and image_registry | length > 0
+          - image_repo is defined and image_repo | length > 0
+          - image_tag is defined and image_tag | length > 0
+        fail_msg: "image_registry, image_repo, and image_tag extra-vars are required"
 
     - name: Fetch MONGO_URI from SSM Parameter Store
       ansible.builtin.command: >-

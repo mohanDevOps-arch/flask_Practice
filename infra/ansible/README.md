@@ -6,7 +6,12 @@ the built-in SSM document **`AWS-ApplyAnsiblePlaybooks`**, which:
 1. Resolves the target instance(s) by tag (`Project=flask-practice`).
 2. Downloads this repo at the exact commit being deployed onto the target.
 3. Installs Ansible if missing (`InstallDependencies=True`).
-4. Runs `ansible-playbook infra/ansible/deploy.yml -e image_uri=<uri>`.
+4. Runs `ansible-playbook infra/ansible/deploy.yml -e "image_registry=… image_repo=… image_tag=…"`.
+
+The image URI is passed as three colonless pieces (`image_registry`,
+`image_repo`, `image_tag`) because SSM rejects `:` inside `ExtraVariables`
+values (it reserves the character for `{{ssm:…}}` parameter references).
+The playbook reassembles them into `image_uri`.
 
 The playbook itself:
 
@@ -30,7 +35,7 @@ aws ssm send-command \
     "SourceInfo":["{\"owner\":\"immrdg\",\"repository\":\"flask_Practice\",\"getOptions\":\"branch:main\"}"],
     "InstallDependencies":["True"],
     "PlaybookFile":["infra/ansible/deploy.yml"],
-    "ExtraVariables":["image_uri=1234.dkr.ecr.us-east-1.amazonaws.com/flask-practice:abc12345"]
+    "ExtraVariables":["image_registry=1234.dkr.ecr.us-east-1.amazonaws.com image_repo=flask-practice image_tag=abc12345 aws_region=us-east-1 project_name=flask-practice"]
   }'
 ```
 

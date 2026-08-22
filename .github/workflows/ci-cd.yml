@@ -105,25 +105,35 @@ jobs:
       # SSM targets the instance id resolved from terraform state, downloads
       # this repo at the exact commit onto it, installs Ansible if missing,
       # and runs infra/ansible/deploy.yml.
+      #
+      # NOTE on ExtraVariables: SSM rejects ':' inside parameter values
+      # (parser reserves it for {{ssm:...}} references), so we pass the ECR
+      # registry / repo / tag as three separate vars and the playbook
+      # reassembles them into image_uri.
       - id: deploy
         env:
+          REGISTRY:    ${{ steps.ecr_login.outputs.registry }}
+          REPO:        ${{ steps.tf_outputs.outputs.ecr_repo }}
+          IMAGE_TAG:   ${{ steps.build.outputs.image_tag }}
           IMAGE_URI:   ${{ steps.build.outputs.image_uri }}
           INSTANCE_ID: ${{ steps.tf_outputs.outputs.instance_id }}
         run: |
           set -euo pipefail
           PARAMS=$(jq -nc \
-            --arg owner  "$GITHUB_REPOSITORY_OWNER" \
-            --arg repo   "${GITHUB_REPOSITORY#*/}" \
-            --arg commit "$GITHUB_SHA" \
-            --arg image  "$IMAGE_URI" \
-            --arg region "${AWS_DEFAULT_REGION:-${AWS_REGION}}" \
-            --arg proj   "$PROJECT_TAG" \
+            --arg owner    "$GITHUB_REPOSITORY_OWNER" \
+            --arg repo     "${GITHUB_REPOSITORY#*/}" \
+            --arg commit   "$GITHUB_SHA" \
+            --arg registry "$REGISTRY" \
+            --arg image    "$REPO" \
+            --arg tag      "$IMAGE_TAG" \
+            --arg region   "${AWS_DEFAULT_REGION:-${AWS_REGION}}" \
+            --arg proj     "$PROJECT_TAG" \
             '{
               SourceType:          ["GitHub"],
               SourceInfo:          [( {owner:$owner, repository:$repo, getOptions:("commit:"+$commit)} | tostring )],
               InstallDependencies: ["True"],
               PlaybookFile:        ["infra/ansible/deploy.yml"],
-              ExtraVariables:      [("image_uri="+$image+" aws_region="+$region+" project_name="+$proj)]
+              ExtraVariables:      [("image_registry="+$registry+" image_repo="+$image+" image_tag="+$tag+" aws_region="+$region+" project_name="+$proj)]
             }')
 
           CMD_ID=$(aws ssm send-command \
