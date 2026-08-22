@@ -199,13 +199,16 @@ jobs:
           EC2_HOST: ${{ steps.tf_outputs.outputs.ec2_host }}
         run: |
           URL="http://${EC2_HOST}:${APP_PORT}/health"
+          # Flask jsonify renders {"status": "healthy", ...} with a space
+          # after the colon, so match with optional whitespace.
           for i in $(seq 1 24); do
-            if curl -fsS --max-time 5 "$URL" | grep -q '"status":"healthy"'; then
-              echo "External health OK"; exit 0
+            BODY=$(curl -fsS --max-time 5 "$URL" || true)
+            if printf '%s' "$BODY" | grep -Eq '"status"[[:space:]]*:[[:space:]]*"healthy"'; then
+              echo "External health OK: $BODY"; exit 0
             fi
             sleep 5
           done
-          echo "External health check failed"; exit 1
+          echo "External health check failed. Last body: $BODY"; exit 1
 
       - id: failed_stage
         if: failure()
