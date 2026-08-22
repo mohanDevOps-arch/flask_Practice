@@ -3,6 +3,19 @@ name: CI/CD
 on:
   push:
     branches: [main]
+    # Trigger only when app / build / deploy code actually changes. Docs,
+    # LICENSE, terraform (applied manually), and marketing HTML don't
+    # re-deploy — use workflow_dispatch if you need to force a run.
+    paths:
+      - 'app.py'
+      - 'templates/**'
+      - 'requirements.txt'
+      - 'test_app.py'
+      - 'Dockerfile'
+      - '.dockerignore'
+      - '.github/workflows/ci-cd.yml'
+      - 'infra/ansible/**'
+      - 'scripts/**'
   workflow_dispatch:
 
 permissions:

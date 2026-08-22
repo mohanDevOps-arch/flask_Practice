@@ -118,6 +118,54 @@
     tr:last-child td { border-bottom: 0; }
     td.right { text-align: right; font-family: var(--mono); }
     .arch { font-size: .78rem; line-height: 1.4; }
+    /* Architecture SVG — inherits colors from CSS custom properties so
+       dark/light modes work without duplicating the diagram. */
+    .arch-svg {
+      display: block;
+      width: 100%;
+      height: auto;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 1rem;
+    }
+    .arch-svg text { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; fill: var(--fg); }
+    .arch-svg .zone-fill { fill: var(--surface-2); }
+    .arch-svg .zone-stroke { stroke: var(--border); stroke-width: 1.2; fill: none; stroke-dasharray: 4 3; }
+    .arch-svg .zone-label { font-size: 11px; font-weight: 600; letter-spacing: .08em; text-transform: uppercase; fill: var(--fg-muted); }
+    .arch-svg .box { fill: var(--surface); stroke: var(--border); stroke-width: 1; }
+    .arch-svg .box-title { font-size: 12px; font-weight: 700; }
+    .arch-svg .box-sub { font-size: 10px; fill: var(--fg-muted); }
+    .arch-svg .accent-l { stroke: var(--accent); stroke-width: 3; }
+    .arch-svg .accent-l2 { stroke: var(--accent-2); stroke-width: 3; }
+    .arch-svg .flow { stroke: var(--fg-muted); stroke-width: 1.4; fill: none; }
+    .arch-svg .flow-control { stroke: var(--accent); stroke-width: 1.6; fill: none; }
+    .arch-svg .flow-data { stroke: var(--accent-2); stroke-width: 1.6; fill: none; }
+    .arch-svg .flow-notify { stroke: #ff9b4a; stroke-width: 1.6; fill: none; }
+    .arch-svg .flow-secure { stroke: #c07cff; stroke-width: 1.6; fill: none; stroke-dasharray: 5 3; }
+    .arch-svg .step {
+      fill: var(--accent); stroke: none;
+    }
+    .arch-svg .step-num { fill: #fff; font-size: 10px; font-weight: 700; font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; text-anchor: middle; }
+    .arch-svg .arrow-fill { fill: var(--fg-muted); }
+    .arch-svg .arrow-fill-control { fill: var(--accent); }
+    .arch-svg .arrow-fill-data { fill: var(--accent-2); }
+    .arch-svg .arrow-fill-notify { fill: #ff9b4a; }
+    .arch-svg .arrow-fill-secure { fill: #c07cff; }
+    .arch-svg .svc-tag { font-size: 9px; fill: var(--fg-muted); font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; }
+    .arch-legend {
+      display: flex; flex-wrap: wrap; gap: .8rem; margin: .75rem 0 0;
+      font-size: .78rem; color: var(--fg-muted);
+    }
+    .arch-legend span { display: inline-flex; align-items: center; gap: .3rem; }
+    .arch-legend i {
+      display: inline-block; width: 22px; height: 3px; border-radius: 2px;
+      background: currentColor;
+    }
+    .arch-legend .l-control { color: var(--accent); }
+    .arch-legend .l-data { color: var(--accent-2); }
+    .arch-legend .l-notify { color: #ff9b4a; }
+    .arch-legend .l-secure { color: #c07cff; }
     ol.setup { padding-left: 1.2rem; }
     ol.setup li { margin-bottom: .8rem; }
     kbd {
@@ -156,8 +204,9 @@
     <h2>What this is</h2>
     <p>Forked from <a href="https://github.com/mohanDevOps-arch/flask_Practice">mohanDevOps-arch/flask_Practice</a>. A small Flask + MongoDB "student registration" app becomes the vehicle for a real CI/CD pipeline:</p>
     <ul>
-      <li>Every push to <code>main</code> runs pytest, builds a Docker image tagged with the commit SHA, pushes to ECR, and deploys onto EC2.</li>
-      <li>Deployment happens over <strong>SSM</strong> (no SSH, no port 22) using the built-in <code>AWS-ApplyAnsiblePlaybooks</code> document — SSM pulls this repo onto the instance and runs an <strong>Ansible</strong> playbook there.</li>
+      <li>Every push to <code>main</code> that touches app / build / deploy code runs pytest, builds a Docker image tagged with the commit SHA, pushes to ECR, and deploys onto EC2.</li>
+      <li>The pipeline discovers the target instance ID (and ECR repo / EIP / SNS topic) from Terraform's <strong>S3-backed remote state</strong> — no per-resource GitHub secrets to maintain.</li>
+      <li>Deployment happens over <strong>SSM</strong> (no SSH, no port 22) using the built-in <code>AWS-ApplyAnsiblePlaybooks</code> document — SSM pulls this repo onto the instance and runs an <strong>Ansible</strong> playbook there. The run-scoped <code>GITHUB_TOKEN</code> is stashed in an SSM SecureString so the fetch authenticates.</li>
       <li>Runtime secrets live in <strong>SSM Parameter Store</strong> as SecureString and are fetched on the instance, never transiting the CI runner.</li>
       <li>A <code>/health</code> endpoint is the real deploy gate — the pipeline only reports success if it returns <code>200 {"status":"healthy"}</code>.</li>
       <li>Success/failure notifications go through an SNS topic with tailored subject + body.</li>
@@ -166,56 +215,306 @@
 
   <section>
     <h2>Architecture</h2>
-    <pre class="arch">
-Developer
-   │ git push main
-   ▼
-┌──────────────────────────────────────────────────────────────┐
-│ GitHub Actions (immrdg/flask_Practice)                       │
-│   1 checkout → 2 install → 3 pytest (mongo service)          │
-│   4 docker build (tag = SHA) → 5 push ECR                    │
-│   6 SSM send-command · AWS-ApplyAnsiblePlaybooks             │
-│   7 curl /health from the internet                           │
-│   8 SNS publish · success or failure                         │
-└──────────────┬────────────────────────────────┬──────────────┘
-               │ IAM user (access key)          │ sns:Publish
-               ▼                                ▼
-┌──────────────────────────────────┐   ┌────────────────────┐
-│ AWS (us-east-1) via Terraform    │   │ Amazon SNS         │
-│                                  │   │ CI topic + email   │
-│   ┌───────┐    ┌────────────────┐│   └────────────────────┘
-│   │  ECR  │    │ SSM            ││
-│   │ repo  │    │ AWS-ApplyAnsi- ││
-│   └───┬───┘    │ blePlaybooks   ││
-│       │ pull   └──────┬─────────┘│
-│       ▼               │ fetch playbook + run
-│   ┌────────────────────────────┐ │
-│   │ EC2 t3.micro (AL2023)      │ │
-│   │  · IAM: SSM + ECR read     │ │
-│   │       + ssm:GetParameter   │ │
-│   │  · Ansible: pull / stop /  │ │
-│   │    run / verify /health    │ │
-│   │  · docker run flask_app    │ │
-│   │  · EIP → stable EC2_HOST   │ │
-│   └────────────┬───────────────┘ │
-│                │ Atlas over TLS  │
-└────────────────┼─────────────────┘
-                 ▼
-        ┌────────────────────┐
-        │ MongoDB Atlas M0   │
-        │  cluster: hv-aws   │
-        └────────────────────┘</pre>
+    <svg class="arch-svg" viewBox="0 0 1040 780" role="img" aria-label="End-to-end CI/CD architecture: developer push through GitHub Actions to AWS ECR, SSM, EC2 with Ansible-deployed container, MongoDB Atlas, and SNS notification.">
+      <defs>
+        <marker id="ah" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+          <path d="M0,0 L10,5 L0,10 z" class="arrow-fill"/>
+        </marker>
+        <marker id="ah-control" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+          <path d="M0,0 L10,5 L0,10 z" class="arrow-fill-control"/>
+        </marker>
+        <marker id="ah-data" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+          <path d="M0,0 L10,5 L0,10 z" class="arrow-fill-data"/>
+        </marker>
+        <marker id="ah-notify" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+          <path d="M0,0 L10,5 L0,10 z" class="arrow-fill-notify"/>
+        </marker>
+        <marker id="ah-secure" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+          <path d="M0,0 L10,5 L0,10 z" class="arrow-fill-secure"/>
+        </marker>
+      </defs>
+
+      <!-- ============ Zone: Developer / GitHub ============ -->
+      <g id="z-gh">
+        <rect x="15" y="15" width="1010" height="140" rx="12" class="zone-fill" opacity=".55"/>
+        <rect x="15" y="15" width="1010" height="140" rx="12" class="zone-stroke"/>
+        <text x="30" y="35" class="zone-label">GitHub Cloud</text>
+
+        <!-- Developer -->
+        <g transform="translate(40,55)">
+          <rect width="130" height="70" rx="8" class="box"/>
+          <line x1="0" y1="0" x2="0" y2="70" class="accent-l"/>
+          <text x="14" y="24" class="box-title">Developer</text>
+          <text x="14" y="42" class="box-sub">git push main</text>
+          <text x="14" y="56" class="box-sub">code changes only</text>
+        </g>
+
+        <!-- GitHub repo -->
+        <g transform="translate(220,55)">
+          <rect width="150" height="70" rx="8" class="box"/>
+          <line x1="0" y1="0" x2="0" y2="70" class="accent-l"/>
+          <text x="14" y="24" class="box-title">GitHub Repo</text>
+          <text x="14" y="42" class="box-sub">immrdg/flask_Practice</text>
+          <text x="14" y="56" class="svc-tag">paths-filtered trigger</text>
+        </g>
+
+        <!-- GitHub Actions runner + inline stages -->
+        <g transform="translate(420,45)">
+          <rect width="590" height="95" rx="8" class="box"/>
+          <line x1="0" y1="0" x2="0" y2="95" class="accent-l"/>
+          <text x="14" y="20" class="box-title">GitHub Actions · CI/CD workflow</text>
+          <text x="14" y="34" class="box-sub">ubuntu-latest · services: mongo:7 · uses ephemeral GITHUB_TOKEN</text>
+          <!-- Stage pills -->
+          <g font-size="9.5" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, monospace">
+            <g transform="translate(14,50)"><rect width="66" height="18" rx="9" class="box"/><text x="33" y="12" text-anchor="middle" class="box-sub">test</text></g>
+            <g transform="translate(86,50)"><rect width="90" height="18" rx="9" class="box"/><text x="45" y="12" text-anchor="middle" class="box-sub">tf outputs</text></g>
+            <g transform="translate(182,50)"><rect width="66" height="18" rx="9" class="box"/><text x="33" y="12" text-anchor="middle" class="box-sub">build</text></g>
+            <g transform="translate(254,50)"><rect width="66" height="18" rx="9" class="box"/><text x="33" y="12" text-anchor="middle" class="box-sub">push</text></g>
+            <g transform="translate(326,50)"><rect width="66" height="18" rx="9" class="box"/><text x="33" y="12" text-anchor="middle" class="box-sub">deploy</text></g>
+            <g transform="translate(398,50)"><rect width="66" height="18" rx="9" class="box"/><text x="33" y="12" text-anchor="middle" class="box-sub">verify</text></g>
+            <g transform="translate(470,50)"><rect width="66" height="18" rx="9" class="box"/><text x="33" y="12" text-anchor="middle" class="box-sub">notify</text></g>
+          </g>
+          <text x="14" y="85" class="svc-tag">IAM user: flask-practice-gha (static access key)</text>
+        </g>
+
+        <!-- Arrows dev → repo → runner -->
+        <path d="M170,90 L220,90" class="flow-control" marker-end="url(#ah-control)"/>
+        <path d="M370,90 L420,90" class="flow-control" marker-end="url(#ah-control)"/>
+      </g>
+
+      <!-- ============ Zone: AWS ============ -->
+      <g id="z-aws">
+        <rect x="15" y="175" width="800" height="490" rx="12" class="zone-fill" opacity=".55"/>
+        <rect x="15" y="175" width="800" height="490" rx="12" class="zone-stroke"/>
+        <text x="30" y="195" class="zone-label">AWS · us-east-1 (managed by Terraform, remote state in S3)</text>
+
+        <!-- Row 1: S3 tfstate, ECR, KMS -->
+        <g transform="translate(40,215)">
+          <rect width="180" height="70" rx="8" class="box"/>
+          <line x1="0" y1="0" x2="0" y2="70" class="accent-l2"/>
+          <text x="14" y="22" class="box-title">S3 · Remote State</text>
+          <text x="14" y="40" class="box-sub">gitops-pipeline-tfstate-…</text>
+          <text x="14" y="55" class="svc-tag">versioned · AES256 · PAB</text>
+        </g>
+        <g transform="translate(245,215)">
+          <rect width="180" height="70" rx="8" class="box"/>
+          <line x1="0" y1="0" x2="0" y2="70" class="accent-l2"/>
+          <text x="14" y="22" class="box-title">Amazon ECR</text>
+          <text x="14" y="40" class="box-sub">flask-practice repo</text>
+          <text x="14" y="55" class="svc-tag">scan on push · lifecycle</text>
+        </g>
+        <g transform="translate(450,215)">
+          <rect width="180" height="70" rx="8" class="box"/>
+          <line x1="0" y1="0" x2="0" y2="70" class="accent-l2"/>
+          <text x="14" y="22" class="box-title">SSM Parameter Store</text>
+          <text x="14" y="40" class="box-sub">/flask-practice/mongo_uri</text>
+          <text x="14" y="55" class="box-sub">/flask-practice/secret_key</text>
+        </g>
+        <g transform="translate(655,215)">
+          <rect width="130" height="70" rx="8" class="box"/>
+          <line x1="0" y1="0" x2="0" y2="70" class="accent-l2"/>
+          <text x="14" y="22" class="box-title">AWS KMS</text>
+          <text x="14" y="40" class="box-sub">alias/aws/ssm</text>
+          <text x="14" y="55" class="svc-tag">SecureString + SNS</text>
+        </g>
+
+        <!-- Row 2: SSM Documents + Ephemeral token -->
+        <g transform="translate(40,310)">
+          <rect width="180" height="90" rx="8" class="box"/>
+          <line x1="0" y1="0" x2="0" y2="90" class="accent-l"/>
+          <text x="14" y="22" class="box-title">SSM Documents</text>
+          <text x="14" y="40" class="box-sub">AWS-ApplyAnsible-</text>
+          <text x="14" y="54" class="box-sub">Playbooks</text>
+          <text x="14" y="72" class="svc-tag">send-command by</text>
+          <text x="14" y="83" class="svc-tag">instance ID</text>
+        </g>
+        <g transform="translate(245,310)">
+          <rect width="180" height="90" rx="8" class="box"/>
+          <line x1="0" y1="0" x2="0" y2="90" class="accent-l"/>
+          <text x="14" y="22" class="box-title">Ephemeral GH Token</text>
+          <text x="14" y="40" class="box-sub">/flask-practice/</text>
+          <text x="14" y="54" class="box-sub">gha_gh_token (SS)</text>
+          <text x="14" y="72" class="svc-tag">{{ssm-secure:...}}</text>
+          <text x="14" y="83" class="svc-tag">rewritten per run</text>
+        </g>
+
+        <!-- Row 3: EC2 + Docker container + IAM role + EIP -->
+        <g transform="translate(40,420)">
+          <rect width="590" height="200" rx="10" class="box"/>
+          <line x1="0" y1="0" x2="0" y2="200" class="accent-l2"/>
+          <text x="14" y="22" class="box-title">EC2 · t3.micro · Amazon Linux 2023</text>
+          <text x="14" y="40" class="box-sub">i-052e42e5564385c80 · EIP 52.201.85.112</text>
+          <text x="14" y="55" class="svc-tag">IMDSv2 only · SG :5000/tcp · IAM instance profile</text>
+
+          <!-- Nested: IAM role -->
+          <g transform="translate(14,72)">
+            <rect width="220" height="56" rx="6" class="box"/>
+            <text x="10" y="18" class="box-title">IAM Role</text>
+            <text x="10" y="32" class="svc-tag">SSMManagedInstanceCore</text>
+            <text x="10" y="44" class="svc-tag">EC2ContainerRegistryReadOnly</text>
+            <text x="10" y="52" class="svc-tag">GetParameter (scoped)</text>
+          </g>
+
+          <!-- Nested: SSM agent -->
+          <g transform="translate(244,72)">
+            <rect width="140" height="56" rx="6" class="box"/>
+            <text x="10" y="18" class="box-title">SSM Agent</text>
+            <text x="10" y="32" class="svc-tag">amazon-ssm-agent</text>
+            <text x="10" y="44" class="svc-tag">Ansible on demand</text>
+          </g>
+
+          <!-- Nested: Docker container -->
+          <g transform="translate(394,72)">
+            <rect width="182" height="56" rx="6" class="box"/>
+            <text x="10" y="18" class="box-title">Docker: flask_app</text>
+            <text x="10" y="32" class="svc-tag">image: ECR:&lt;commit-sha&gt;</text>
+            <text x="10" y="44" class="svc-tag">host:5000 → cnt:5000</text>
+          </g>
+
+          <!-- Ansible playbook flow -->
+          <g transform="translate(14,140)">
+            <rect width="562" height="50" rx="6" class="box"/>
+            <text x="10" y="18" class="box-title">Ansible playbook (runs on-target)</text>
+            <text x="10" y="34" class="svc-tag">1. ECR login (IAM role)  →  2. docker pull  →  3. stop/rm old  →  4. run new  →  5. wait for /health  →  6. prune</text>
+          </g>
+        </g>
+
+        <!-- SNS -->
+        <g transform="translate(655,310)">
+          <rect width="130" height="90" rx="8" class="box"/>
+          <line x1="0" y1="0" x2="0" y2="90" class="accent-l"/>
+          <text x="14" y="22" class="box-title">Amazon SNS</text>
+          <text x="14" y="40" class="box-sub">flask-practice-ci</text>
+          <text x="14" y="58" class="svc-tag">success + failure</text>
+          <text x="14" y="70" class="svc-tag">tailored email body</text>
+          <text x="14" y="82" class="svc-tag">named failed stage</text>
+        </g>
+      </g>
+
+      <!-- ============ Zone: External ============ -->
+      <g id="z-ext">
+        <rect x="835" y="175" width="190" height="490" rx="12" class="zone-fill" opacity=".55"/>
+        <rect x="835" y="175" width="190" height="490" rx="12" class="zone-stroke"/>
+        <text x="850" y="195" class="zone-label">External</text>
+
+        <g transform="translate(855,225)">
+          <rect width="150" height="90" rx="8" class="box"/>
+          <line x1="0" y1="0" x2="0" y2="90" class="accent-l2"/>
+          <text x="14" y="22" class="box-title">MongoDB Atlas</text>
+          <text x="14" y="40" class="box-sub">M0 · hv-aws</text>
+          <text x="14" y="55" class="svc-tag">studentDB</text>
+          <text x="14" y="72" class="svc-tag">TLS via</text>
+          <text x="14" y="83" class="svc-tag">mongodb+srv://</text>
+        </g>
+
+        <g transform="translate(855,340)">
+          <rect width="150" height="70" rx="8" class="box"/>
+          <line x1="0" y1="0" x2="0" y2="70" class="accent-l"/>
+          <text x="14" y="22" class="box-title">Email recipients</text>
+          <text x="14" y="40" class="box-sub">subscribed to SNS</text>
+          <text x="14" y="55" class="svc-tag">confirm-once flow</text>
+        </g>
+
+        <g transform="translate(855,435)">
+          <rect width="150" height="70" rx="8" class="box"/>
+          <line x1="0" y1="0" x2="0" y2="70" class="accent-l"/>
+          <text x="14" y="22" class="box-title">End user</text>
+          <text x="14" y="40" class="box-sub">http://EIP:5000</text>
+          <text x="14" y="55" class="svc-tag">HTTP</text>
+        </g>
+      </g>
+
+      <!-- ============ Cross-zone flows (numbered) ============ -->
+      <!-- 1. Runner → S3 (fetch tf outputs) -->
+      <path d="M580,155 C500,185 300,190 220,215" class="flow-data" marker-end="url(#ah-data)"/>
+      <circle cx="410" cy="187" r="9" class="step"/>
+      <text x="410" y="191" class="step-num">1</text>
+
+      <!-- 2. Runner → ECR (docker push) -->
+      <path d="M700,155 C500,185 400,190 335,215" class="flow-control" marker-end="url(#ah-control)"/>
+      <circle cx="562" cy="176" r="9" class="step"/>
+      <text x="562" y="180" class="step-num">2</text>
+
+      <!-- 3. Runner → SSM Docs (send-command) -->
+      <path d="M820,155 C700,215 300,240 130,310" class="flow-control" marker-end="url(#ah-control)"/>
+      <circle cx="600" cy="215" r="9" class="step"/>
+      <text x="600" y="219" class="step-num">3</text>
+
+      <!-- 3b. Runner writes token to SSM SecureString (dashed = secure) -->
+      <path d="M900,155 C650,200 500,260 335,310" class="flow-secure" marker-end="url(#ah-secure)"/>
+
+      <!-- 4. SSM Docs → EC2 (dispatch to instance) -->
+      <path d="M130,400 L130,420" class="flow-control" marker-end="url(#ah-control)"/>
+      <circle cx="130" cy="410" r="9" class="step"/>
+      <text x="130" y="414" class="step-num">4</text>
+
+      <!-- 4b. Ephemeral token → EC2 (secure substitution at fetch) -->
+      <path d="M335,400 L335,420" class="flow-secure" marker-end="url(#ah-secure)"/>
+
+      <!-- 5. EC2 → ECR (docker pull via IAM role) -->
+      <path d="M335,285 C335,340 335,380 320,420" class="flow-data" marker-end="url(#ah-data)"/>
+      <circle cx="322" cy="380" r="9" class="step"/>
+      <text x="322" y="384" class="step-num">5</text>
+
+      <!-- 5b. EC2 → Parameter Store (Mongo URI + SECRET_KEY) -->
+      <path d="M540,285 C540,350 540,380 470,420" class="flow-data" marker-end="url(#ah-data)"/>
+
+      <!-- 6. EC2 → Atlas -->
+      <path d="M630,530 C700,530 820,300 855,270" class="flow-data" marker-end="url(#ah-data)"/>
+      <circle cx="742" cy="415" r="9" class="step"/>
+      <text x="742" y="419" class="step-num">6</text>
+
+      <!-- 7. Runner → SNS (publish notification) -->
+      <path d="M960,155 C830,220 780,270 720,310" class="flow-notify" marker-end="url(#ah-notify)"/>
+      <circle cx="843" cy="235" r="9" class="step"/>
+      <text x="843" y="239" class="step-num">7</text>
+
+      <!-- 7b. SNS → Email -->
+      <path d="M785,375 L855,375" class="flow-notify" marker-end="url(#ah-notify)"/>
+
+      <!-- 8. End user → EC2 -->
+      <path d="M855,470 C740,470 650,475 630,510" class="flow-control" marker-end="url(#ah-control)" marker-start="url(#ah-control)"/>
+      <circle cx="740" cy="470" r="9" class="step"/>
+      <text x="740" y="474" class="step-num">8</text>
+
+      <!-- KMS decrypt indicator to Parameter Store & SNS -->
+      <path d="M655,250 L630,250" class="flow-secure"/>
+      <path d="M655,270 L630,340" class="flow-secure"/>
+
+      <!-- ============ Numbered step legend ============ -->
+      <g transform="translate(30,690)">
+        <text x="0" y="10" class="box-title">Flow</text>
+        <text x="0" y="30" class="box-sub">1  Fetch remote state outputs (instance id, ECR repo, EIP, SNS topic)</text>
+        <text x="0" y="46" class="box-sub">2  Build image tagged with commit SHA → push to ECR</text>
+        <text x="0" y="62" class="box-sub">3  Stash GITHUB_TOKEN as SecureString → SSM send-command to target instance</text>
+      </g>
+      <g transform="translate(520,690)">
+        <text x="0" y="10" class="box-title">&#160;</text>
+        <text x="0" y="30" class="box-sub">4  AWS-ApplyAnsiblePlaybooks fetches this repo at the commit SHA (auth)</text>
+        <text x="0" y="46" class="box-sub">5  Ansible pulls image + reads Mongo URI/SECRET_KEY from Parameter Store</text>
+        <text x="0" y="62" class="box-sub">6  Container runs; app talks to Atlas · 7 SNS publish · 8 external /health</text>
+      </g>
+    </svg>
+
+    <div class="arch-legend">
+      <span class="l-control"><i></i> control / API</span>
+      <span class="l-data"><i></i> data / pull</span>
+      <span class="l-notify"><i></i> notification</span>
+      <span class="l-secure"><i></i> secure / KMS-encrypted</span>
+    </div>
   </section>
 
   <section>
     <h2>Pipeline stages</h2>
+    <p class="muted" style="margin-top:-.5rem;">Triggered on push to <code>main</code>, path-filtered to only fire on app / build / deploy code changes. Docs, Terraform, and marketing HTML are ignored — use <em>workflow_dispatch</em> to force a run.</p>
     <div class="stages">
-      <div class="stage"><strong>Checkout</strong><small>Latest source on push to <code>main</code>.</small></div>
+      <div class="stage"><strong>Checkout</strong><small>Latest source on push (paths-filtered).</small></div>
       <div class="stage"><strong>Install</strong><small><code>pip install -r requirements.txt</code>.</small></div>
       <div class="stage"><strong>Test</strong><small><code>pytest</code> against a Mongo service container. Fails the build.</small></div>
+      <div class="stage"><strong>TF outputs</strong><small><code>terraform init</code> + <code>output -raw</code> on S3-backed state.</small></div>
       <div class="stage"><strong>Build</strong><small><code>docker build</code>, tagged with the commit SHA.</small></div>
       <div class="stage"><strong>Push ECR</strong><small>Authenticated ECR push (SHA tag + <code>latest</code>).</small></div>
-      <div class="stage"><strong>Deploy</strong><small>SSM ↦ Ansible playbook on the tagged EC2. Idempotent.</small></div>
+      <div class="stage"><strong>Deploy</strong><small>SSM ↦ Ansible on the instance ID from state. Idempotent.</small></div>
       <div class="stage"><strong>Verify</strong><small>External <code>curl /health</code> retries with hard fail.</small></div>
       <div class="stage"><strong>Notify</strong><small>SNS publish. Failure email names the failed stage.</small></div>
     </div>
@@ -232,11 +531,12 @@ Developer
 ├── .env / .env.example
 ├── templates/                   # existing HTML views (untouched)
 │
-├── .github/workflows/ci-cd.yml  # 174 lines — 8-stage pipeline
+├── .github/workflows/ci-cd.yml  # paths-filtered 9-stage pipeline
 │
 ├── infra/
 │   ├── ansible/deploy.yml       # runs on EC2 via AWS-ApplyAnsiblePlaybooks
-│   └── terraform/               # ECR, EC2, IAM, SNS, Parameter Store
+│   └── terraform/               # ECR, EC2, IAM, SNS, Parameter Store,
+│                                  #   S3 remote state (backend.tf)
 │
 └── scripts/notify.sh            # SNS publish helper (only script)</code></pre>
   </section>
@@ -291,7 +591,7 @@ terraform init &amp;&amp; terraform apply</code></pre>
     <div class="grid">
       <div class="card">
         <h4>Static access keys, not OIDC</h4>
-        <p>Simpler setup; the GHA secret access key lives in Terraform state. Rotate with <code>terraform apply -replace=aws_iam_access_key.gha</code>.</p>
+        <p>Simpler setup; the GHA secret access key lives in Terraform state (S3, encrypted). Rotate with <code>terraform apply -replace=aws_iam_access_key.gha</code>.</p>
       </div>
       <div class="card">
         <h4>Single EC2, no load balancer</h4>
@@ -299,11 +599,19 @@ terraform init &amp;&amp; terraform apply</code></pre>
       </div>
       <div class="card">
         <h4>Runtime secrets in Parameter Store</h4>
-        <p>MONGO_URI / SECRET_KEY never touch the CI runner or CloudTrail command params. Ansible fetches them on the target.</p>
+        <p>MONGO_URI / SECRET_KEY never touch the CI runner or CloudTrail command params. Ansible fetches them on the target via the EC2 IAM role.</p>
       </div>
       <div class="card">
-        <h4>Local Terraform state</h4>
-        <p>Fine for a lab. Move to S3 + DynamoDB lock for team use.</p>
+        <h4>S3 remote state, no DynamoDB lock</h4>
+        <p>State lives in an S3 bucket outside this stack (versioned, AES256, public-access blocked). The pipeline is read-only against state — CI never runs <code>apply</code>. Add DynamoDB locking if multiple humans start applying concurrently.</p>
+      </div>
+      <div class="card">
+        <h4>GH token stashed in SSM SecureString</h4>
+        <p>AWS-ApplyAnsiblePlaybooks' <code>tokenInfo</code> only accepts the <code>{{ssm-secure:name}}</code> form, so the run-scoped GITHUB_TOKEN is written to Parameter Store each run and referenced from there. Raises the GitHub API limit from 60/hr per-IP to 5000/hr per-token.</p>
+      </div>
+      <div class="card">
+        <h4>Path-filtered triggers</h4>
+        <p>Deploys only fire when app / build / deploy files change. README / overview / Terraform edits skip CI entirely — use <code>workflow_dispatch</code> if you really need to force a run.</p>
       </div>
     </div>
   </section>
