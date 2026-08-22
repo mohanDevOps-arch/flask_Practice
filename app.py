@@ -12,9 +12,13 @@ app = Flask(__name__)
 app.config["MONGO_URI"] = os.getenv("MONGO_URI")
 app.secret_key = os.getenv("SECRET_KEY")
 
-# Use certifi CA bundle explicitly for cross-platform TLS reliability
-# (notably fixes common macOS certificate verification failures).
-mongo = PyMongo(app, tlsCAFile=certifi.where())
+# Only pin certifi's CA bundle when the URI actually uses TLS. Passing
+# tlsCAFile implicitly enables TLS on the pymongo client, which breaks
+# plain mongodb:// connections (e.g. the local mongo:7 service used in CI).
+_mongo_uri = os.getenv("MONGO_URI") or ""
+_needs_tls = _mongo_uri.startswith("mongodb+srv://") or "tls=true" in _mongo_uri.lower()
+_mongo_kwargs = {"tlsCAFile": certifi.where()} if _needs_tls else {}
+mongo = PyMongo(app, **_mongo_kwargs)
 
 # Health check -> verifies MongoDB connectivity (used as deploy verification gate)
 @app.route('/health')
