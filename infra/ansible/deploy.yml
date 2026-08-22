@@ -1,0 +1,107 @@
+---
+# Ansible playbook run on the EC2 target by SSM (AWS-ApplyAnsiblePlaybooks).
+#
+# Extra-vars passed by the pipeline:
+#   image_uri     — full ECR image URI, e.g. 1234.dkr.ecr.us-east-1.amazonaws.com/flask-practice:<sha>
+#   aws_region    — region for ECR + Parameter Store (defaults to us-east-1)
+#   project_name  — used to build SSM Parameter Store paths (defaults to flask-practice)
+- name: Deploy flask app container
+  hosts: localhost
+  connection: local
+  gather_facts: false
+  become: true
+
+  vars:
+    aws_region: "{{ aws_region | default('us-east-1') }}"
+    project_name: "{{ project_name | default('flask-practice') }}"
+    container_name: flask_app
+    app_port: 5000
+    health_url: "http://127.0.0.1:{{ app_port }}/health"
+
+  tasks:
+    - name: Assert image_uri was provided
+      ansible.builtin.assert:
+        that: image_uri is defined and image_uri | length > 0
+        fail_msg: "image_uri extra-var is required"
+
+    - name: Fetch MONGO_URI from SSM Parameter Store
+      ansible.builtin.command: >-
+        aws ssm get-parameter
+          --name /{{ project_name }}/mongo_uri
+          --with-decryption
+          --region {{ aws_region }}
+          --query Parameter.Value
+          --output text
+      register: mongo_uri_lookup
+      changed_when: false
+      no_log: true
+
+    - name: Fetch SECRET_KEY from SSM Parameter Store
+      ansible.builtin.command: >-
+        aws ssm get-parameter
+          --name /{{ project_name }}/secret_key
+          --with-decryption
+          --region {{ aws_region }}
+          --query Parameter.Value
+          --output text
+      register: secret_key_lookup
+      changed_when: false
+      no_log: true
+
+    - name: Authenticate Docker to ECR
+      ansible.builtin.shell: >-
+        aws ecr get-login-password --region {{ aws_region }} |
+        docker login --username AWS
+        --password-stdin {{ image_uri.split('/')[0] }}
+      register: ecr_login
+      changed_when: "'Login Succeeded' in ecr_login.stdout"
+
+    - name: Pull new image
+      ansible.builtin.command: "docker pull {{ image_uri }}"
+      register: pull_result
+      changed_when: "'Downloaded newer image' in pull_result.stdout or 'Pull complete' in pull_result.stdout"
+
+    - name: Stop existing container (if any)
+      ansible.builtin.command: "docker stop {{ container_name }}"
+      register: stop_result
+      failed_when: false
+      changed_when: stop_result.rc == 0
+
+    - name: Remove existing container (if any)
+      ansible.builtin.command: "docker rm {{ container_name }}"
+      register: rm_result
+      failed_when: false
+      changed_when: rm_result.rc == 0
+
+    - name: Run new container
+      ansible.builtin.command: >-
+        docker run -d
+          --name {{ container_name }}
+          --restart unless-stopped
+          -p {{ app_port }}:5000
+          -e MONGO_URI={{ mongo_uri_lookup.stdout | quote }}
+          -e SECRET_KEY={{ secret_key_lookup.stdout | quote }}
+          {{ image_uri }}
+      no_log: true
+
+    - name: Wait for /health to report healthy
+      ansible.builtin.uri:
+        url: "{{ health_url }}"
+        status_code: 200
+        return_content: true
+      register: health
+      until: health.status == 200 and (health.json.status | default('')) == 'healthy'
+      retries: 24
+      delay: 5
+
+    - name: Prune dangling images
+      ansible.builtin.command: docker image prune -f
+      register: prune
+      changed_when: "'Total reclaimed space: 0B' not in prune.stdout"
+
+    - name: Summary
+      ansible.builtin.debug:
+        msg:
+          - "Deployed image: {{ image_uri }}"
+          - "Container:      {{ container_name }}"
+          - "Health:         {{ health.json }}"

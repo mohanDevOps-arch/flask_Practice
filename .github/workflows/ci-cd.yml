@@ -1,0 +1,214 @@
+name: CI/CD
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+env:
+  APP_PORT: "5000"
+  PROJECT_TAG: flask-practice   # matches Terraform's default_tags Project=…
+
+jobs:
+  build-deploy:
+    name: Build, Test, and Deploy
+    runs-on: ubuntu-latest
+
+    services:
+      mongo:
+        image: mongo:7
+        ports: ["27017:27017"]
+        options: >-
+          --health-cmd "mongosh --quiet --eval 'db.runCommand({ ping: 1 }).ok' | grep -q 1"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+
+    steps:
+      - id: checkout
+        uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+
+      - id: install
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+
+      - id: test
+        env:
+          MONGO_URI: mongodb://localhost:27017/test_student_db
+          SECRET_KEY: ci-test
+        run: pytest -v
+
+      - uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id:     ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region:            ${{ secrets.AWS_REGION }}
+
+      # Pull the infra facts we need (instance id, ECR repo, EC2 host, SNS
+      # topic) from the S3-backed terraform state. Backend config is baked
+      # into infra/terraform/backend.tf, so `terraform init` needs no flags.
+      # The pipeline never runs `terraform apply` — read-only.
+      - uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: "~1.6"
+          terraform_wrapper: false
+
+      - id: tf_outputs
+        working-directory: infra/terraform
+        run: |
+          set -euo pipefail
+          terraform init -input=false
+
+          {
+            echo "instance_id=$(terraform output -raw ec2_instance_id)"
+            echo "ecr_repo=$(terraform output -raw ecr_repository_name)"
+            echo "ec2_host=$(terraform output -raw ec2_public_ip)"
+            echo "sns_topic=$(terraform output -raw sns_topic_arn)"
+          } >> "$GITHUB_OUTPUT"
+
+          echo "Discovered from remote state:"
+          echo "  ec2_instance_id  = $(terraform output -raw ec2_instance_id)"
+          echo "  ecr_repository   = $(terraform output -raw ecr_repository_name)"
+          echo "  ec2_public_ip    = $(terraform output -raw ec2_public_ip)"
+
+      - id: ecr_login
+        uses: aws-actions/amazon-ecr-login@v2
+
+      - id: build
+        env:
+          REGISTRY: ${{ steps.ecr_login.outputs.registry }}
+          REPO:     ${{ steps.tf_outputs.outputs.ecr_repo }}
+        run: |
+          TAG="${GITHUB_SHA::12}"
+          URI="${REGISTRY}/${REPO}:${TAG}"
+          docker build -t "$URI" -t "${REGISTRY}/${REPO}:latest" .
+          echo "image_uri=$URI" >> "$GITHUB_OUTPUT"
+          echo "image_tag=$TAG" >> "$GITHUB_OUTPUT"
+
+      - id: push
+        env:
+          REGISTRY: ${{ steps.ecr_login.outputs.registry }}
+          REPO:     ${{ steps.tf_outputs.outputs.ecr_repo }}
+        run: |
+          docker push "${{ steps.build.outputs.image_uri }}"
+          docker push "${REGISTRY}/${REPO}:latest"
+
+      # SSM targets the instance id resolved from terraform state, downloads
+      # this repo at the exact commit onto it, installs Ansible if missing,
+      # and runs infra/ansible/deploy.yml.
+      - id: deploy
+        env:
+          IMAGE_URI:   ${{ steps.build.outputs.image_uri }}
+          INSTANCE_ID: ${{ steps.tf_outputs.outputs.instance_id }}
+        run: |
+          set -euo pipefail
+          PARAMS=$(jq -nc \
+            --arg owner  "$GITHUB_REPOSITORY_OWNER" \
+            --arg repo   "${GITHUB_REPOSITORY#*/}" \
+            --arg commit "$GITHUB_SHA" \
+            --arg image  "$IMAGE_URI" \
+            --arg region "${AWS_DEFAULT_REGION:-${AWS_REGION}}" \
+            --arg proj   "$PROJECT_TAG" \
+            '{
+              SourceType:          ["GitHub"],
+              SourceInfo:          [( {owner:$owner, repository:$repo, getOptions:("commit:"+$commit)} | tostring )],
+              InstallDependencies: ["True"],
+              PlaybookFile:        ["infra/ansible/deploy.yml"],
+              ExtraVariables:      [("image_uri="+$image+" aws_region="+$region+" project_name="+$proj)]
+            }')
+
+          CMD_ID=$(aws ssm send-command \
+            --document-name "AWS-ApplyAnsiblePlaybooks" \
+            --instance-ids "${INSTANCE_ID}" \
+            --comment "Deploy ${IMAGE_URI}" \
+            --parameters "$PARAMS" \
+            --query 'Command.CommandId' \
+            --output text)
+          echo "SSM Command ID: $CMD_ID (target: ${INSTANCE_ID})"
+
+          # Poll until every invocation reaches a terminal state.
+          for i in $(seq 1 120); do
+            mapfile -t STATUSES < <(aws ssm list-command-invocations \
+              --command-id "$CMD_ID" \
+              --query 'CommandInvocations[].Status' --output text | tr '\t' '\n')
+            [[ ${#STATUSES[@]} -eq 0 ]] && { sleep 5; continue; }
+
+            IN_FLIGHT=false
+            FAILED=false
+            for s in "${STATUSES[@]}"; do
+              case "$s" in
+                Pending|InProgress|Delayed) IN_FLIGHT=true ;;
+                Failed|TimedOut|Cancelled)  FAILED=true    ;;
+              esac
+            done
+
+            if $FAILED; then
+              echo "Deploy failed on at least one target."
+              aws ssm list-command-invocations --command-id "$CMD_ID" --details \
+                --query 'CommandInvocations[].{Instance:InstanceId,Status:Status,Output:CommandPlugins[0].Output}' \
+                --output json
+              exit 1
+            fi
+            $IN_FLIGHT || { echo "Deploy succeeded on all targets."; exit 0; }
+            sleep 5
+          done
+          echo "Timed out waiting for SSM command"
+          exit 1
+
+      - id: verify
+        env:
+          EC2_HOST: ${{ steps.tf_outputs.outputs.ec2_host }}
+        run: |
+          URL="http://${EC2_HOST}:${APP_PORT}/health"
+          for i in $(seq 1 24); do
+            if curl -fsS --max-time 5 "$URL" | grep -q '"status":"healthy"'; then
+              echo "External health OK"; exit 0
+            fi
+            sleep 5
+          done
+          echo "External health check failed"; exit 1
+
+      - id: failed_stage
+        if: failure()
+        run: |
+          if   [ "${{ steps.checkout.outcome   }}" = "failure" ]; then STAGE=checkout
+          elif [ "${{ steps.install.outcome    }}" = "failure" ]; then STAGE=install
+          elif [ "${{ steps.test.outcome       }}" = "failure" ]; then STAGE=test
+          elif [ "${{ steps.tf_outputs.outcome }}" = "failure" ]; then STAGE=tf_outputs
+          elif [ "${{ steps.build.outcome      }}" = "failure" ]; then STAGE=build
+          elif [ "${{ steps.push.outcome       }}" = "failure" ]; then STAGE=push
+          elif [ "${{ steps.deploy.outcome     }}" = "failure" ]; then STAGE=deploy
+          elif [ "${{ steps.verify.outcome     }}" = "failure" ]; then STAGE=verify
+          else STAGE=unknown
+          fi
+          echo "stage=$STAGE" >> "$GITHUB_OUTPUT"
+
+      - name: Notify (success or failure)
+        if: always()
+        env:
+          TOPIC_ARN:     ${{ steps.tf_outputs.outputs.sns_topic }}
+          JOB_STATUS:    ${{ job.status }}
+          FAILED_STAGE:  ${{ steps.failed_stage.outputs.stage }}
+          IMAGE_TAG:     ${{ steps.build.outputs.image_tag }}
+          IMAGE_URI:     ${{ steps.build.outputs.image_uri }}
+          EC2_HOST:      ${{ steps.tf_outputs.outputs.ec2_host }}
+        run: |
+          # tf_outputs may not have run (e.g. AWS-creds step failed). Fall
+          # back to the SNS_TOPIC_ARN secret if it's still set, otherwise skip.
+          if [ -z "${TOPIC_ARN:-}" ]; then
+            TOPIC_ARN="${{ secrets.SNS_TOPIC_ARN }}"
+          fi
+          if [ -z "${TOPIC_ARN:-}" ]; then
+            echo "No SNS topic available (tf_outputs didn't run and SNS_TOPIC_ARN secret unset). Skipping notify."
+            exit 0
+          fi
+          TOPIC_ARN="$TOPIC_ARN" ./scripts/notify.sh

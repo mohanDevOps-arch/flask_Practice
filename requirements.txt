@@ -3,6 +3,7 @@ Flask-PyMongo
 python-dotenv
 pymongo
 certifi
+gunicorn
 pytest
 pylint
 bandit

@@ -24,6 +24,15 @@ def client():
         mongo.cx.drop_database("test_student_db")
 
 
+def test_health_ok(client):
+    """Health endpoint returns 200 with a connected Mongo"""
+    response = client.get('/health')
+    assert response.status_code == 200
+    body = response.get_json()
+    assert body["status"] == "healthy"
+    assert body["mongo"] == "connected"
+
+
 def test_home_page(client):
     """Test if home page loads correctly"""
     response = client.get('/')

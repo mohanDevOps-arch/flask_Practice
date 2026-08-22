@@ -1,0 +1,17 @@
+# Copy to terraform.tfvars and edit. terraform.tfvars is gitignored.
+#
+# Remote state (bucket / key / region) is hardcoded in backend.tf, not here.
+
+aws_region   = "us-east-1"
+project_name = "flask-practice"
+
+# Restrict who can hit the app port. Default is open; scope to your IP for lab use.
+# app_ingress_cidrs = ["203.0.113.42/32"]
+
+# Recipients for the CI/CD SNS topic. Each address gets a one-time
+# "Confirm subscription" email from AWS after `terraform apply`.
+notify_emails = [
+  "you@example.com",
+]
+
+# tags = { Owner = "gireesh", Env = "lab" }
