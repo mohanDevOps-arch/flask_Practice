@@ -117,18 +117,32 @@ jobs:
           IMAGE_TAG:   ${{ steps.build.outputs.image_tag }}
           IMAGE_URI:   ${{ steps.build.outputs.image_uri }}
           INSTANCE_ID: ${{ steps.tf_outputs.outputs.instance_id }}
-          # Authenticate the AWS-ApplyAnsiblePlaybooks GitHub fetch so it
-          # uses the 5000/hr per-token limit instead of 60/hr per-IP.
           # GITHUB_TOKEN is auto-provisioned per run, read-only (top-level
-          # `permissions: contents: read`), and expires with the job.
-          GH_TOKEN:    ${{ secrets.GITHUB_TOKEN }}
+          # `permissions: contents: read`), and expires with the job. We
+          # stash it as an SSM SecureString so AWS-ApplyAnsiblePlaybooks can
+          # substitute it into SourceInfo.tokenInfo — that field only accepts
+          # the {{ssm-secure:name}} form, not a raw token. Authenticating the
+          # fetch raises the GitHub API limit from 60/hr per-IP to 5000/hr
+          # per-token.
+          GH_TOKEN:      ${{ secrets.GITHUB_TOKEN }}
+          GH_TOKEN_PARAM: /flask-practice/gha_gh_token
         run: |
           set -euo pipefail
+
+          # Overwrite each run so the SecureString always matches the
+          # currently-valid GITHUB_TOKEN.
+          aws ssm put-parameter \
+            --name "$GH_TOKEN_PARAM" \
+            --type SecureString \
+            --value "$GH_TOKEN" \
+            --overwrite \
+            --output text > /dev/null
+
           PARAMS=$(jq -nc \
             --arg owner    "$GITHUB_REPOSITORY_OWNER" \
             --arg repo     "${GITHUB_REPOSITORY#*/}" \
             --arg commit   "$GITHUB_SHA" \
-            --arg token    "$GH_TOKEN" \
+            --arg tokenref "{{ssm-secure:${GH_TOKEN_PARAM}}}" \
             --arg registry "$REGISTRY" \
             --arg image    "$REPO" \
             --arg tag      "$IMAGE_TAG" \
@@ -136,7 +150,7 @@ jobs:
             --arg proj     "$PROJECT_TAG" \
             '{
               SourceType:          ["GitHub"],
-              SourceInfo:          [( {owner:$owner, repository:$repo, getOptions:("commitID:"+$commit), tokenInfo:("token:"+$token)} | tostring )],
+              SourceInfo:          [( {owner:$owner, repository:$repo, getOptions:("commitID:"+$commit), tokenInfo:$tokenref} | tostring )],
               InstallDependencies: ["True"],
               PlaybookFile:        ["infra/ansible/deploy.yml"],
               ExtraVariables:      [("image_registry="+$registry+" image_repo="+$image+" image_tag="+$tag+" aws_region="+$region+" project_name="+$proj)]

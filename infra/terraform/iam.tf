@@ -123,6 +123,38 @@ data "aws_iam_policy_document" "gha" {
     }
   }
 
+  # SSM Parameter Store: pipeline stashes each run's ephemeral GITHUB_TOKEN
+  # as a SecureString so SSM's AWS-ApplyAnsiblePlaybooks can substitute it
+  # into SourceInfo.tokenInfo via {{ssm-secure:...}} — required because that
+  # field rejects raw values. Scoped to just the one param path.
+  statement {
+    sid    = "SsmManageGhTokenParam"
+    effect = "Allow"
+    actions = [
+      "ssm:PutParameter",
+      "ssm:GetParameter",
+      "ssm:GetParameters",
+    ]
+    resources = [
+      "arn:aws:ssm:${var.aws_region}:${data.aws_caller_identity.current.account_id}:parameter/${var.project_name}/gha_gh_token",
+    ]
+  }
+
+  # KMS decrypt for the SSM-managed default key used to encrypt the token
+  # SecureString (both when SSM resolves {{ssm-secure:...}} and when the
+  # pipeline overwrites the param).
+  statement {
+    sid       = "SsmGhTokenKms"
+    effect    = "Allow"
+    actions   = ["kms:Decrypt"]
+    resources = ["*"]
+    condition {
+      test     = "StringEquals"
+      variable = "kms:ViaService"
+      values   = ["ssm.${var.aws_region}.amazonaws.com"]
+    }
+  }
+
   # SSM: using the AWS-managed documents we actually invoke.
   statement {
     sid     = "SsmSendCommandUsingApprovedDocuments"
@@ -195,8 +227,16 @@ data "aws_iam_policy_document" "gha" {
   }
 }
 
-resource "aws_iam_user_policy" "gha" {
-  name   = "${var.project_name}-gha"
-  user   = aws_iam_user.gha.name
-  policy = data.aws_iam_policy_document.gha.json
+# Managed policy (not inline) because the combined statements exceed the
+# 2048-byte inline user-policy limit once the SSM-secure token plumbing
+# and S3 remote-state read are added.
+resource "aws_iam_policy" "gha" {
+  name        = "${var.project_name}-gha"
+  description = "CI/CD permissions for the ${var.project_name} GitHub Actions user"
+  policy      = data.aws_iam_policy_document.gha.json
+}
+
+resource "aws_iam_user_policy_attachment" "gha" {
+  user       = aws_iam_user.gha.name
+  policy_arn = aws_iam_policy.gha.arn
 }
