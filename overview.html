@@ -156,6 +156,35 @@
       font-size: .82em;
     }
     footer { margin-top: 4rem; padding-top: 1.5rem; border-top: 1px solid var(--border); color: var(--fg-muted); font-size: .85rem; }
+    .repo-pill {
+      display: inline-flex; align-items: center; gap: .55rem;
+      margin-top: 1rem; padding: .5rem .85rem;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 999px;
+      color: var(--fg);
+      font-family: var(--mono);
+      font-size: .88rem;
+      transition: border-color .15s, color .15s;
+    }
+    .repo-pill:hover { border-color: var(--accent); color: var(--accent); text-decoration: none; }
+    .repo-pill svg { width: 18px; height: 18px; flex-shrink: 0; }
+    .repo-pill .repo-owner { color: var(--fg-muted); }
+    .repo-pill .repo-name { font-weight: 600; }
+    .repo-pill .repo-arrow { color: var(--fg-muted); }
+    .repo-meta {
+      display: flex; flex-wrap: wrap; gap: .4rem;
+      margin-top: .5rem;
+      font-size: .78rem;
+    }
+    .repo-meta a {
+      color: var(--fg-muted);
+      border-bottom: 1px dotted var(--border);
+    }
+    .repo-meta a:hover { color: var(--accent); border-bottom-color: var(--accent); text-decoration: none; }
+    .fork-note {
+      font-size: .82rem; color: var(--fg-muted); margin: .35rem 0 0;
+    }
   </style>
 </head>
 <body>
@@ -164,6 +193,21 @@
   <header>
     <h1>flask_Practice · CI/CD Assignment</h1>
     <p class="subtitle">A working CI/CD pipeline from <code>git push</code> to a live container on EC2 — with test, build, ECR push, deploy, health check, and SNS notification.</p>
+    <a class="repo-pill" href="https://github.com/immrdg/flask_Practice" target="_blank" rel="noopener" aria-label="Open immrdg/flask_Practice on GitHub">
+      <svg viewBox="0 0 16 16" aria-hidden="true" fill="currentColor"><path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0016 8c0-4.42-3.58-8-8-8z"/></svg>
+      <span class="repo-owner">immrdg /</span><span class="repo-name">flask_Practice</span>
+      <span class="repo-arrow">↗</span>
+    </a>
+    <div class="repo-meta">
+      <a href="https://github.com/immrdg/flask_Practice/actions" target="_blank" rel="noopener">Actions</a>
+      <span class="muted">·</span>
+      <a href="https://github.com/immrdg/flask_Practice/blob/main/.github/workflows/ci-cd.yml" target="_blank" rel="noopener">ci-cd.yml</a>
+      <span class="muted">·</span>
+      <a href="https://github.com/immrdg/flask_Practice/tree/main/infra/terraform" target="_blank" rel="noopener">infra/terraform</a>
+      <span class="muted">·</span>
+      <a href="https://github.com/immrdg/flask_Practice/blob/main/infra/ansible/deploy.yml" target="_blank" rel="noopener">infra/ansible/deploy.yml</a>
+    </div>
+    <p class="fork-note">Forked from <a href="https://github.com/mohanDevOps-arch/flask_Practice" target="_blank" rel="noopener">mohanDevOps-arch/flask_Practice</a>.</p>
     <div class="badges">
       <span class="badge">Python 3.12</span>
       <span class="badge">Flask</span>
@@ -181,7 +225,7 @@
 
   <section>
     <h2>What this is</h2>
-    <p>Forked from <a href="https://github.com/mohanDevOps-arch/flask_Practice">mohanDevOps-arch/flask_Practice</a>. A small Flask + MongoDB "student registration" app becomes the vehicle for a real CI/CD pipeline:</p>
+    <p><a href="https://github.com/immrdg/flask_Practice" target="_blank" rel="noopener"><strong>immrdg/flask_Practice</strong></a> — a fork of the starter <a href="https://github.com/mohanDevOps-arch/flask_Practice" target="_blank" rel="noopener">mohanDevOps-arch/flask_Practice</a> student-registration app, wired up as a real CI/CD pipeline. The application code is small on purpose; the interesting work lives in <code>.github/workflows/</code>, <code>infra/terraform/</code>, and <code>infra/ansible/</code>:</p>
     <ul>
       <li>Every push to <code>main</code> that touches app / build / deploy code runs pytest, builds a Docker image tagged with the commit SHA, pushes to ECR, and deploys onto EC2.</li>
       <li>The pipeline discovers the target instance ID (and ECR repo / EIP / SNS topic) from Terraform's <strong>S3-backed remote state</strong> — no per-resource GitHub secrets to maintain.</li>
@@ -265,7 +309,7 @@
     <h2>Getting started</h2>
     <ol class="setup">
       <li>
-        <strong>Fork &amp; clone</strong> — <code>gh repo fork mohanDevOps-arch/flask_Practice --clone</code>.
+        <strong>Clone this repo</strong> — <code>git clone https://github.com/immrdg/flask_Practice.git &amp;&amp; cd flask_Practice</code>. Prefer a fresh fork? <code>gh repo fork immrdg/flask_Practice --clone</code>.
       </li>
       <li>
         <strong>Provision AWS</strong> —
@@ -338,7 +382,8 @@ terraform init &amp;&amp; terraform apply</code></pre>
 
   <footer>
     Rendered as static HTML — open this file directly in a browser.
-    Source of truth lives in the neighbouring Markdown, YAML, HCL, and Python files.
+    Source of truth lives in the neighbouring Markdown, YAML, HCL, and Python files —
+    the same repo on GitHub: <a href="https://github.com/immrdg/flask_Practice" target="_blank" rel="noopener">immrdg/flask_Practice</a>.
   </footer>
 
 </main>
