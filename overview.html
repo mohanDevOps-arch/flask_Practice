@@ -117,71 +117,34 @@
     th { color: var(--fg-muted); font-weight: 600; font-size: .82rem; text-transform: uppercase; letter-spacing: .04em; }
     tr:last-child td { border-bottom: 0; }
     td.right { text-align: right; font-family: var(--mono); }
-    .arch { font-size: .78rem; line-height: 1.4; }
-    /* Architecture SVG — draw.io-style AWS diagram. Fixed light palette
-       inside the frame so it reads as a printed architecture doc even
-       inside a dark page. */
-    .arch-svg {
-      display: block;
-      width: 100%;
-      height: auto;
-      background: #f5f7fb;
+    /* Architecture diagram — rendered live by the draw.io viewer using
+       the official AWS4 icon library. Light background inside so the
+       icons stay legible even when the page is in dark mode. */
+    .drawio-embed {
+      background: #ffffff;
       border: 1px solid #dadfe8;
       border-radius: 6px;
-      padding: 1rem;
+      padding: .5rem;
+      overflow: auto;
       color-scheme: light;
     }
-    .arch-svg text { font-family: Helvetica, "Helvetica Neue", Arial, sans-serif; fill: #232f3e; }
-    .arch-svg .zone-github { fill: none; stroke: #24292f; stroke-width: 1.5; stroke-dasharray: 6 4; }
-    .arch-svg .zone-aws    { fill: none; stroke: #232f3e; stroke-width: 1.8; }
-    .arch-svg .zone-ext    { fill: none; stroke: #8c919e; stroke-width: 1.5; stroke-dasharray: 6 4; }
-    .arch-svg .zone-fill-gh  { fill: #f6f8fa; }
-    .arch-svg .zone-fill-aws { fill: #fafbfd; }
-    .arch-svg .zone-fill-ext { fill: #f9fafc; }
-    .arch-svg .zone-label { font-size: 11px; font-weight: 700; letter-spacing: .1em; text-transform: uppercase; fill: #5a6270; }
-    .arch-svg .aws-label  { font-size: 11px; font-weight: 700; letter-spacing: .1em; fill: #232f3e; }
-    .arch-svg .svc-box   { fill: #ffffff; stroke: #b0b7c3; stroke-width: 1; }
-    .arch-svg .svc-title { font-size: 12px; font-weight: 700; fill: #232f3e; }
-    .arch-svg .svc-sub   { font-size: 10.5px; fill: #55606f; }
-    .arch-svg .svc-tag   { font-size: 9.5px; fill: #7a8497; font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; }
-    .arch-svg .glyph-txt { fill: #ffffff; font-size: 9.5px; font-weight: 700; font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; text-anchor: middle; }
-    /* AWS category colors (2021 palette) */
-    .arch-svg .cat-compute  { fill: #ed7100; }  /* orange   */
-    .arch-svg .cat-storage  { fill: #7aa116; }  /* green    */
-    .arch-svg .cat-database { fill: #c925d1; }  /* magenta  */
-    .arch-svg .cat-mgmt     { fill: #e7157b; }  /* pink     */
-    .arch-svg .cat-security { fill: #dd344c; }  /* red      */
-    .arch-svg .cat-network  { fill: #8c4fff; }  /* purple   */
-    .arch-svg .cat-container{ fill: #c925d1; }  /* magenta  */
-    .arch-svg .cat-github   { fill: #24292f; }
-    .arch-svg .cat-atlas    { fill: #00684a; }
-    .arch-svg .cat-user     { fill: #4a5bff; }
-    /* Flow colors — solid orthogonal connectors, draw.io style */
-    .arch-svg .flow-control { stroke: #4a5bff; stroke-width: 1.6; fill: none; }
-    .arch-svg .flow-data    { stroke: #0e9f7f; stroke-width: 1.6; fill: none; }
-    .arch-svg .flow-notify  { stroke: #ed7100; stroke-width: 1.6; fill: none; }
-    .arch-svg .flow-secure  { stroke: #7b1fa2; stroke-width: 1.6; fill: none; stroke-dasharray: 5 3; }
-    .arch-svg .fill-control { fill: #4a5bff; }
-    .arch-svg .fill-data    { fill: #0e9f7f; }
-    .arch-svg .fill-notify  { fill: #ed7100; }
-    .arch-svg .fill-secure  { fill: #7b1fa2; }
-    .arch-svg .step-c       { fill: #ffffff; stroke: #4a5bff; stroke-width: 1.5; }
-    .arch-svg .step-num     { fill: #232f3e; font-size: 10.5px; font-weight: 700; font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; text-anchor: middle; dominant-baseline: middle; }
-    /* Drop shadow (draw.io default) */
-    .arch-svg-shadow feGaussianBlur { }
-    .arch-legend {
-      display: flex; flex-wrap: wrap; gap: .8rem; margin: .75rem 0 0;
-      font-size: .78rem; color: var(--fg-muted);
+    .drawio-embed .mxgraph { max-width: 100%; }
+    .arch-actions {
+      display: flex; flex-wrap: wrap; gap: .6rem;
+      margin: .6rem 0 0; font-size: .82rem; color: var(--fg-muted);
     }
-    .arch-legend span { display: inline-flex; align-items: center; gap: .3rem; }
-    .arch-legend i {
-      display: inline-block; width: 22px; height: 3px; border-radius: 2px;
-      background: currentColor;
+    .arch-actions a {
+      display: inline-flex; align-items: center; gap: .3rem;
+      background: var(--surface-2);
+      border: 1px solid var(--border);
+      color: var(--fg);
+      padding: .25rem .6rem; border-radius: 999px;
+      font-family: var(--mono); font-size: .78rem;
     }
-    .arch-legend .l-control { color: #4a5bff; }
-    .arch-legend .l-data    { color: #0e9f7f; }
-    .arch-legend .l-notify  { color: #ed7100; }
-    .arch-legend .l-secure  { color: #7b1fa2; }
+    .arch-actions a:hover { text-decoration: none; border-color: var(--accent); color: var(--accent); }
+    .arch-note {
+      margin-top: .5rem; font-size: .8rem; color: var(--fg-muted);
+    }
     ol.setup { padding-left: 1.2rem; }
     ol.setup li { margin-bottom: .8rem; }
     kbd {
@@ -231,346 +194,33 @@
 
   <section>
     <h2>Architecture</h2>
-    <svg class="arch-svg" viewBox="0 0 1160 880" role="img" aria-label="Enterprise-style CI/CD architecture: developer push through GitHub Actions to AWS ECR, SSM, EC2 with Ansible-deployed container, MongoDB Atlas, and SNS notification. Draw.io-style AWS icons with orthogonal flow arrows.">
-      <defs>
-        <filter id="ds" x="-20%" y="-20%" width="140%" height="140%">
-          <feDropShadow dx="1.5" dy="2" stdDeviation="1.5" flood-color="#000" flood-opacity=".18"/>
-        </filter>
-        <marker id="ah-c" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
-          <path d="M0,0 L10,5 L0,10 z" class="fill-control"/>
-        </marker>
-        <marker id="ah-d" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
-          <path d="M0,0 L10,5 L0,10 z" class="fill-data"/>
-        </marker>
-        <marker id="ah-n" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
-          <path d="M0,0 L10,5 L0,10 z" class="fill-notify"/>
-        </marker>
-        <marker id="ah-s" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
-          <path d="M0,0 L10,5 L0,10 z" class="fill-secure"/>
-        </marker>
-      </defs>
+    <div class="drawio-embed">
+      <div class="mxgraph" style="max-width:100%;" aria-label="Flask App CI/CD architecture rendered as a draw.io diagram with official AWS icons"></div>
+    </div>
+    <script type="application/xml" id="drawio-arch-xml"><mxfile host="app.diagrams.net" agent="Kiro" version="24.0.0"><diagram id="cicd-arch" name="CI/CD Architecture"><mxGraphModel dx="1440" dy="1200" grid="0" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1440" pageHeight="1220" math="0" shadow="0"><root><mxCell id="0"/><mxCell id="1" parent="0"/><mxCell id="title" value="Flask App · CI/CD Architecture" style="text;html=1;align=center;verticalAlign=middle;fontSize=18;fontStyle=1;fontColor=#232F3E;" vertex="1" parent="1"><mxGeometry x="20" y="10" width="1400" height="28" as="geometry"/></mxCell><mxCell id="subtitle" value="git push → test → build → ECR push → SSM/Ansible deploy → /health gate → SNS notify" style="text;html=1;align=center;verticalAlign=middle;fontSize=12;fontColor=#57606A;" vertex="1" parent="1"><mxGeometry x="20" y="38" width="1400" height="18" as="geometry"/></mxCell><mxCell id="gh_zone" value="GitHub Cloud" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#F6F8FA;strokeColor=#24292F;strokeWidth=1;dashed=1;dashPattern=8 4;verticalAlign=top;align=left;fontSize=13;fontStyle=1;spacingLeft=14;spacingTop=8;fontColor=#24292F;container=1;pointerEvents=0;collapsible=0;" vertex="1" parent="1"><mxGeometry x="20" y="70" width="1400" height="200" as="geometry"/></mxCell><mxCell id="dev" value="" style="dashed=0;outlineConnect=0;html=1;align=center;labelPosition=center;verticalLabelPosition=bottom;verticalAlign=top;shape=mxgraph.weblogos.github;" vertex="1" parent="gh_zone"><mxGeometry x="40" y="60" width="50" height="50" as="geometry"/></mxCell><mxCell id="dev_lbl" value="Developer&#xa;git push main" style="text;html=1;align=center;fontSize=10;fontColor=#57606A;" vertex="1" parent="gh_zone"><mxGeometry x="20" y="115" width="90" height="28" as="geometry"/></mxCell><mxCell id="ghrepo" value="" style="dashed=0;outlineConnect=0;html=1;align=center;labelPosition=center;verticalLabelPosition=bottom;verticalAlign=top;shape=mxgraph.weblogos.github;" vertex="1" parent="gh_zone"><mxGeometry x="130" y="60" width="50" height="50" as="geometry"/></mxCell><mxCell id="ghrepo_lbl" value="GitHub Repo&#xa;immrdg/flask_Practice" style="text;html=1;align=center;fontSize=10;fontColor=#57606A;" vertex="1" parent="gh_zone"><mxGeometry x="105" y="115" width="100" height="28" as="geometry"/></mxCell><mxCell id="gha_block" value="GitHub Actions · CI/CD Workflow" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#FFFFFF;strokeColor=#24292F;strokeWidth=1.5;verticalAlign=top;align=left;fontSize=13;fontStyle=1;spacingLeft=14;spacingTop=8;fontColor=#24292F;container=1;pointerEvents=0;collapsible=0;" vertex="1" parent="gh_zone"><mxGeometry x="230" y="30" width="1150" height="160" as="geometry"/></mxCell><mxCell id="gha_sub" value=".github/workflows/ci-cd.yml · runs-on: ubuntu-latest · service: mongo:7 · auth: aws-actions/configure-aws-credentials" style="text;html=1;fontSize=11;fontColor=#57606A;align=left;spacingLeft=14;" vertex="1" parent="gha_block"><mxGeometry x="0" y="32" width="1000" height="18" as="geometry"/></mxCell><mxCell id="pill_1" value="1 checkout" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#EDF2FA;strokeColor=#4A5BFF;fontSize=11;fontStyle=1;fontColor=#232F3E;" vertex="1" parent="gha_block"><mxGeometry x="14" y="60" width="115" height="26" as="geometry"/></mxCell><mxCell id="pill_2" value="2 install" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#EDF2FA;strokeColor=#4A5BFF;fontSize=11;fontStyle=1;fontColor=#232F3E;" vertex="1" parent="gha_block"><mxGeometry x="135" y="60" width="105" height="26" as="geometry"/></mxCell><mxCell id="pill_3" value="3 test" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#EDF2FA;strokeColor=#4A5BFF;fontSize=11;fontStyle=1;fontColor=#232F3E;" vertex="1" parent="gha_block"><mxGeometry x="246" y="60" width="90" height="26" as="geometry"/></mxCell><mxCell id="pill_4" value="4 tf outputs" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#EDF2FA;strokeColor=#4A5BFF;fontSize=11;fontStyle=1;fontColor=#232F3E;" vertex="1" parent="gha_block"><mxGeometry x="342" y="60" width="120" height="26" as="geometry"/></mxCell><mxCell id="pill_5" value="5 build" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#EDF2FA;strokeColor=#4A5BFF;fontSize=11;fontStyle=1;fontColor=#232F3E;" vertex="1" parent="gha_block"><mxGeometry x="468" y="60" width="90" height="26" as="geometry"/></mxCell><mxCell id="pill_6" value="6 push ECR" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#EDF2FA;strokeColor=#4A5BFF;fontSize=11;fontStyle=1;fontColor=#232F3E;" vertex="1" parent="gha_block"><mxGeometry x="564" y="60" width="120" height="26" as="geometry"/></mxCell><mxCell id="pill_7" value="7 deploy (SSM)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#EDF2FA;strokeColor=#4A5BFF;fontSize=11;fontStyle=1;fontColor=#232F3E;" vertex="1" parent="gha_block"><mxGeometry x="690" y="60" width="145" height="26" as="geometry"/></mxCell><mxCell id="pill_8" value="8 verify /health" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#EDF2FA;strokeColor=#4A5BFF;fontSize=11;fontStyle=1;fontColor=#232F3E;" vertex="1" parent="gha_block"><mxGeometry x="841" y="60" width="150" height="26" as="geometry"/></mxCell><mxCell id="pill_9" value="9 notify" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#EDF2FA;strokeColor=#4A5BFF;fontSize=11;fontStyle=1;fontColor=#232F3E;" vertex="1" parent="gha_block"><mxGeometry x="997" y="60" width="100" height="26" as="geometry"/></mxCell><mxCell id="gha_desc" value="Reads tf outputs from S3 · builds &amp; pushes image to ECR · dispatches AWS-ApplyAnsiblePlaybooks · publishes SNS on success or failure&#xa;Ephemeral GITHUB_TOKEN stashed as SSM SecureString each run · runtime secrets (mongo_uri, secret_key) live in Parameter Store · KMS wraps all SecureStrings and the SNS topic" style="text;html=1;fontSize=10;fontColor=#57606A;align=left;spacingLeft=14;" vertex="1" parent="gha_block"><mxGeometry x="0" y="98" width="1140" height="60" as="geometry"/></mxCell><mxCell id="aws_zone" value="AWS Cloud · us-east-1  (managed by Terraform · state in S3)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#FAFBFD;strokeColor=#232F3E;strokeWidth=2;verticalAlign=top;align=left;fontSize=13;fontStyle=1;spacingLeft=14;spacingTop=8;fontColor=#232F3E;container=1;pointerEvents=0;collapsible=0;" vertex="1" parent="1"><mxGeometry x="20" y="290" width="1080" height="880" as="geometry"/></mxCell><mxCell id="svc_s3" value="Amazon S3&#xa;tfstate" style="sketch=0;outlineConnect=0;fontColor=#232F3E;fillColor=#7AA116;strokeColor=#ffffff;dashed=0;verticalLabelPosition=bottom;verticalAlign=top;align=center;html=1;fontSize=11;fontStyle=0;aspect=fixed;shape=mxgraph.aws4.resourceIcon;resIcon=mxgraph.aws4.s3;" vertex="1" parent="aws_zone"><mxGeometry x="200" y="45" width="60" height="60" as="geometry"/></mxCell><mxCell id="svc_ecr" value="Amazon ECR&#xa;flask-practice" style="sketch=0;outlineConnect=0;fontColor=#232F3E;fillColor=#ED7100;strokeColor=#ffffff;dashed=0;verticalLabelPosition=bottom;verticalAlign=top;align=center;html=1;fontSize=11;fontStyle=0;aspect=fixed;shape=mxgraph.aws4.resourceIcon;resIcon=mxgraph.aws4.ecr;" vertex="1" parent="aws_zone"><mxGeometry x="380" y="45" width="60" height="60" as="geometry"/></mxCell><mxCell id="svc_ssm" value="Systems Manager&#xa;Run Command" style="sketch=0;outlineConnect=0;fontColor=#232F3E;fillColor=#E7157B;strokeColor=#ffffff;dashed=0;verticalLabelPosition=bottom;verticalAlign=top;align=center;html=1;fontSize=11;fontStyle=0;aspect=fixed;shape=mxgraph.aws4.resourceIcon;resIcon=mxgraph.aws4.systems_manager;" vertex="1" parent="aws_zone"><mxGeometry x="560" y="45" width="60" height="60" as="geometry"/></mxCell><mxCell id="svc_ps" value="SSM Parameter Store&#xa;mongo_uri · secret_key · gh_token" style="sketch=0;outlineConnect=0;fontColor=#232F3E;gradientColor=none;fillColor=#E7157B;strokeColor=none;dashed=0;verticalLabelPosition=bottom;verticalAlign=top;align=center;html=1;fontSize=11;fontStyle=0;aspect=fixed;pointerEvents=1;shape=mxgraph.aws4.parameter_store;" vertex="1" parent="aws_zone"><mxGeometry x="742" y="45" width="55" height="60" as="geometry"/></mxCell><mxCell id="svc_sns" value="Amazon SNS&#xa;flask-practice-ci" style="sketch=0;outlineConnect=0;fontColor=#232F3E;fillColor=#E7157B;strokeColor=#ffffff;dashed=0;verticalLabelPosition=bottom;verticalAlign=top;align=center;html=1;fontSize=11;fontStyle=0;aspect=fixed;shape=mxgraph.aws4.resourceIcon;resIcon=mxgraph.aws4.sns;" vertex="1" parent="aws_zone"><mxGeometry x="920" y="45" width="60" height="60" as="geometry"/></mxCell><mxCell id="vpc" value="VPC (default) · Security Group tcp:5000 · IMDSv2 only" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#F0F5FF;strokeColor=#8C4FFF;strokeWidth=2;dashed=1;dashPattern=8 4;verticalAlign=top;align=left;fontSize=12;fontStyle=1;spacingLeft=14;spacingTop=8;fontColor=#8C4FFF;container=1;pointerEvents=0;collapsible=0;" vertex="1" parent="aws_zone"><mxGeometry x="30" y="200" width="1020" height="650" as="geometry"/></mxCell><mxCell id="ec2_group" value="EC2 · t3.micro · Amazon Linux 2023 · EIP 52.201.85.112 · i-052e42e5564385c80" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#FFFFFF;strokeColor=#ED7100;strokeWidth=2;verticalAlign=top;align=left;fontSize=12;fontStyle=1;spacingLeft=90;spacingTop=8;fontColor=#232F3E;container=1;pointerEvents=0;collapsible=0;" vertex="1" parent="vpc"><mxGeometry x="30" y="40" width="960" height="580" as="geometry"/></mxCell><mxCell id="ec2_icon" value="EC2" style="sketch=0;outlineConnect=0;fontColor=#ffffff;fillColor=#ED7100;strokeColor=#ffffff;dashed=0;verticalLabelPosition=middle;verticalAlign=middle;align=center;html=1;fontSize=11;fontStyle=1;aspect=fixed;shape=mxgraph.aws4.resourceIcon;resIcon=mxgraph.aws4.ec2;" vertex="1" parent="ec2_group"><mxGeometry x="10" y="5" width="70" height="70" as="geometry"/></mxCell><mxCell id="ec2_role" value="Instance IAM Role · flask-practice-ec2&#xa;SSMManagedInstanceCore + ECRReadOnly + GetParameter" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#FDECEF;strokeColor=#DD344C;strokeWidth=1.5;fontSize=11;fontStyle=0;fontColor=#232F3E;verticalAlign=middle;align=center;spacing=6;" vertex="1" parent="ec2_group"><mxGeometry x="20" y="90" width="260" height="60" as="geometry"/></mxCell><mxCell id="ec2_agent" value="amazon-ssm-agent&#xa;fetches this repo at commit SHA · installs Ansible · executes on-target" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#FDEEF5;strokeColor=#E7157B;strokeWidth=1.5;fontSize=11;fontStyle=0;fontColor=#232F3E;verticalAlign=middle;align=center;spacing=6;" vertex="1" parent="ec2_group"><mxGeometry x="410" y="90" width="280" height="60" as="geometry"/></mxCell><mxCell id="ec2_docker" value="Docker container · flask_app&#xa;image = ECR:&lt;12-char commit SHA&gt; · port 5000→5000 · restart: unless-stopped · env MONGO_URI, SECRET_KEY (from Parameter Store)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#EDF2FA;strokeColor=#4A5BFF;strokeWidth=2;fontSize=11;fontStyle=0;fontColor=#232F3E;verticalAlign=middle;align=center;spacing=6;" vertex="1" parent="ec2_group"><mxGeometry x="20" y="180" width="920" height="90" as="geometry"/></mxCell><mxCell id="ec2_ansible" value="Ansible playbook · infra/ansible/deploy.yml (runs on-target · connection: local · become: true)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#F5F0FF;strokeColor=#7B1FA2;strokeWidth=1.5;fontSize=12;fontStyle=1;fontColor=#232F3E;verticalAlign=top;align=center;spacingTop=8;container=1;pointerEvents=0;collapsible=0;" vertex="1" parent="ec2_group"><mxGeometry x="20" y="300" width="920" height="150" as="geometry"/></mxCell><mxCell id="a_pill1" value="1 · ECR login" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#FFFFFF;strokeColor=#7B1FA2;fontSize=10;fontStyle=1;fontColor=#232F3E;" vertex="1" parent="ec2_ansible"><mxGeometry x="20" y="42" width="120" height="24" as="geometry"/></mxCell><mxCell id="a_pill2" value="2 · docker pull" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#FFFFFF;strokeColor=#7B1FA2;fontSize=10;fontStyle=1;fontColor=#232F3E;" vertex="1" parent="ec2_ansible"><mxGeometry x="150" y="42" width="125" height="24" as="geometry"/></mxCell><mxCell id="a_pill3" value="3 · stop/rm old" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#FFFFFF;strokeColor=#7B1FA2;fontSize=10;fontStyle=1;fontColor=#232F3E;" vertex="1" parent="ec2_ansible"><mxGeometry x="285" y="42" width="135" height="24" as="geometry"/></mxCell><mxCell id="a_pill4" value="4 · run new" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#FFFFFF;strokeColor=#7B1FA2;fontSize=10;fontStyle=1;fontColor=#232F3E;" vertex="1" parent="ec2_ansible"><mxGeometry x="430" y="42" width="115" height="24" as="geometry"/></mxCell><mxCell id="a_pill5" value="5 · wait /health" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#FFFFFF;strokeColor=#7B1FA2;fontSize=10;fontStyle=1;fontColor=#232F3E;" vertex="1" parent="ec2_ansible"><mxGeometry x="555" y="42" width="145" height="24" as="geometry"/></mxCell><mxCell id="a_pill6" value="6 · prune images" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#FFFFFF;strokeColor=#7B1FA2;fontSize=10;fontStyle=1;fontColor=#232F3E;" vertex="1" parent="ec2_ansible"><mxGeometry x="710" y="42" width="145" height="24" as="geometry"/></mxCell><mxCell id="a_note" value="MONGO_URI + SECRET_KEY fetched from Parameter Store on-target via the EC2 IAM role · secrets never touch the CI runner · retries GET /health 24× (5s) before declaring success" style="text;html=1;fontSize=10;fontColor=#57606A;align=center;" vertex="1" parent="ec2_ansible"><mxGeometry x="20" y="78" width="880" height="50" as="geometry"/></mxCell><mxCell id="ec2_health" value="/health returns 200 {&quot;status&quot;: &quot;healthy&quot;} — real deploy gate (pipeline retries externally before declaring the release good)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#E7F7EE;strokeColor=#0E9F7F;strokeWidth=1.5;fontSize=11;fontStyle=1;fontColor=#0E9F7F;verticalAlign=middle;align=center;" vertex="1" parent="ec2_group"><mxGeometry x="20" y="470" width="920" height="36" as="geometry"/></mxCell><mxCell id="ec2_desc" value="user_data bootstraps Docker + amazon-ssm-agent · encrypted 20 GiB gp3 root · IMDSv2 required" style="text;html=1;fontSize=10;fontColor=#57606A;align=center;" vertex="1" parent="ec2_group"><mxGeometry x="20" y="516" width="920" height="18" as="geometry"/></mxCell><mxCell id="ext_zone" value="External" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#F9FAFC;strokeColor=#8C919E;strokeWidth=1;dashed=1;dashPattern=8 4;verticalAlign=top;align=left;fontSize=13;fontStyle=1;spacingLeft=14;spacingTop=8;fontColor=#8C919E;container=1;pointerEvents=0;collapsible=0;" vertex="1" parent="1"><mxGeometry x="1120" y="290" width="300" height="880" as="geometry"/></mxCell><mxCell id="email" value="✉ Email recipients&#xa;SNS subscribers · confirm-once flow&#xa;tailored subject + body (names failed stage)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#FFFFFF;strokeColor=#E7157B;strokeWidth=1.5;fontSize=11;fontStyle=0;fontColor=#232F3E;verticalAlign=middle;align=center;spacing=8;" vertex="1" parent="ext_zone"><mxGeometry x="20" y="50" width="260" height="80" as="geometry"/></mxCell><mxCell id="atlas" value="MongoDB Atlas" style="dashed=0;outlineConnect=0;html=1;align=center;labelPosition=center;verticalLabelPosition=bottom;verticalAlign=top;shape=mxgraph.weblogos.mongodb;fontSize=12;fontColor=#00684A;fontStyle=1;" vertex="1" parent="ext_zone"><mxGeometry x="120" y="310" width="45" height="90" as="geometry"/></mxCell><mxCell id="atlas_sub" value="M0 · cluster hv-aws · studentDB&#xa;TLS 1.2+ (mongodb+srv://)&#xa;certifi CA bundle" style="text;html=1;align=center;fontSize=10;fontColor=#57606A;" vertex="1" parent="ext_zone"><mxGeometry x="20" y="420" width="260" height="46" as="geometry"/></mxCell><mxCell id="user" value="End user" style="shape=umlActor;verticalLabelPosition=bottom;verticalAlign=top;html=1;outlineConnect=0;fontSize=12;fontStyle=1;fontColor=#232F3E;" vertex="1" parent="ext_zone"><mxGeometry x="130" y="620" width="40" height="70" as="geometry"/></mxCell><mxCell id="user_sub" value="HTTP → EIP:5000&#xa;GET / · GET /health · POST /add · …" style="text;html=1;align=center;fontSize=10;fontColor=#57606A;" vertex="1" parent="ext_zone"><mxGeometry x="20" y="710" width="260" height="30" as="geometry"/></mxCell><mxCell id="e_dev_repo" value="git push" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;strokeColor=#24292F;strokeWidth=1.8;endArrow=classic;fontColor=#24292F;fontSize=10;fontStyle=1;labelBackgroundColor=#FFFFFF;exitX=1;exitY=0.5;exitDx=0;exitDy=0;entryX=0;entryY=0.5;entryDx=0;entryDy=0;" edge="1" parent="1" source="dev" target="ghrepo"><mxGeometry relative="1" as="geometry"/></mxCell><mxCell id="e_repo_gha" value="trigger" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;strokeColor=#24292F;strokeWidth=1.8;endArrow=classic;fontColor=#24292F;fontSize=10;fontStyle=1;labelBackgroundColor=#FFFFFF;exitX=1;exitY=0.5;exitDx=0;exitDy=0;entryX=0;entryY=0.3;entryDx=0;entryDy=0;" edge="1" parent="1" source="ghrepo" target="gha_block"><mxGeometry relative="1" as="geometry"/></mxCell><mxCell id="e1" value="① read tfstate" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;strokeColor=#0E9F7F;strokeWidth=2;endArrow=classic;fontColor=#0E9F7F;fontSize=11;fontStyle=1;labelBackgroundColor=#FFFFFF;exitX=0.02;exitY=1;exitDx=0;exitDy=0;entryX=0.5;entryY=0;entryDx=0;entryDy=0;" edge="1" parent="1" source="gha_block" target="svc_s3"><mxGeometry relative="1" as="geometry"/></mxCell><mxCell id="e2" value="② docker push" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;strokeColor=#4A5BFF;strokeWidth=2;endArrow=classic;fontColor=#4A5BFF;fontSize=11;fontStyle=1;labelBackgroundColor=#FFFFFF;exitX=0.19;exitY=1;exitDx=0;exitDy=0;entryX=0.5;entryY=0;entryDx=0;entryDy=0;" edge="1" parent="1" source="gha_block" target="svc_ecr"><mxGeometry relative="1" as="geometry"/></mxCell><mxCell id="e3" value="③ SendCommand" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;strokeColor=#4A5BFF;strokeWidth=2;endArrow=classic;fontColor=#4A5BFF;fontSize=11;fontStyle=1;labelBackgroundColor=#FFFFFF;exitX=0.36;exitY=1;exitDx=0;exitDy=0;entryX=0.5;entryY=0;entryDx=0;entryDy=0;" edge="1" parent="1" source="gha_block" target="svc_ssm"><mxGeometry relative="1" as="geometry"/></mxCell><mxCell id="e8" value="⑧ publish" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;strokeColor=#ED7100;strokeWidth=2;endArrow=classic;fontColor=#ED7100;fontSize=11;fontStyle=1;labelBackgroundColor=#FFFFFF;exitX=0.68;exitY=1;exitDx=0;exitDy=0;entryX=0.5;entryY=0;entryDx=0;entryDy=0;" edge="1" parent="1" source="gha_block" target="svc_sns"><mxGeometry relative="1" as="geometry"/></mxCell><mxCell id="e4" value="④ run playbook" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;strokeColor=#4A5BFF;strokeWidth=2;endArrow=classic;fontColor=#4A5BFF;fontSize=11;fontStyle=1;labelBackgroundColor=#FFFFFF;exitX=0.5;exitY=1;exitDx=0;exitDy=0;entryX=0.5;entryY=0;entryDx=0;entryDy=0;" edge="1" parent="1" source="svc_ssm" target="ec2_agent"><mxGeometry relative="1" as="geometry"/></mxCell><mxCell id="e5" value="⑤ docker pull" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;strokeColor=#0E9F7F;strokeWidth=2;endArrow=classic;fontColor=#0E9F7F;fontSize=11;fontStyle=1;labelBackgroundColor=#FFFFFF;exitX=0.26;exitY=0;exitDx=0;exitDy=0;entryX=0.5;entryY=1;entryDx=0;entryDy=0;" edge="1" parent="1" source="ec2_docker" target="svc_ecr"><mxGeometry relative="1" as="geometry"/></mxCell><mxCell id="e6" value="⑥ GetParameter" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;strokeColor=#0E9F7F;strokeWidth=2;endArrow=classic;fontColor=#0E9F7F;fontSize=11;fontStyle=1;labelBackgroundColor=#FFFFFF;exitX=0.65;exitY=0;exitDx=0;exitDy=0;entryX=0.5;entryY=1;entryDx=0;entryDy=0;" edge="1" parent="1" source="ec2_docker" target="svc_ps"><mxGeometry relative="1" as="geometry"/></mxCell><mxCell id="e7" value="⑦ TLS · mongodb+srv" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;strokeColor=#0E9F7F;strokeWidth=2;endArrow=classic;fontColor=#0E9F7F;fontSize=11;fontStyle=1;labelBackgroundColor=#FFFFFF;exitX=1;exitY=0.5;exitDx=0;exitDy=0;entryX=0;entryY=0.5;entryDx=0;entryDy=0;" edge="1" parent="1" source="ec2_docker" target="atlas"><mxGeometry relative="1" as="geometry"/></mxCell><mxCell id="e8b" value="fan-out email" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;strokeColor=#ED7100;strokeWidth=2;endArrow=classic;fontColor=#ED7100;fontSize=11;fontStyle=1;labelBackgroundColor=#FFFFFF;exitX=1;exitY=0.5;exitDx=0;exitDy=0;entryX=0;entryY=0.5;entryDx=0;entryDy=0;" edge="1" parent="1" source="svc_sns" target="email"><mxGeometry relative="1" as="geometry"/></mxCell><mxCell id="e9" value="⑨ HTTP :5000" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;strokeColor=#4A5BFF;strokeWidth=2;endArrow=classic;fontColor=#4A5BFF;fontSize=11;fontStyle=1;labelBackgroundColor=#FFFFFF;exitX=0;exitY=0.5;exitDx=0;exitDy=0;entryX=1;entryY=0.75;entryDx=0;entryDy=0;" edge="1" parent="1" source="user" target="ec2_docker"><mxGeometry relative="1" as="geometry"/></mxCell><mxCell id="legend" value="" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#FFFFFF;strokeColor=#8C919E;strokeWidth=1;container=1;pointerEvents=0;collapsible=0;" vertex="1" parent="1"><mxGeometry x="20" y="1180" width="1400" height="34" as="geometry"/></mxCell><mxCell id="lg_c" value="━ control / API" style="text;html=1;fontSize=11;fontStyle=1;fontColor=#4A5BFF;align=left;" vertex="1" parent="legend"><mxGeometry x="30" y="8" width="140" height="18" as="geometry"/></mxCell><mxCell id="lg_d" value="━ data / pull / TLS" style="text;html=1;fontSize=11;fontStyle=1;fontColor=#0E9F7F;align=left;" vertex="1" parent="legend"><mxGeometry x="200" y="8" width="160" height="18" as="geometry"/></mxCell><mxCell id="lg_n" value="━ notification (SNS)" style="text;html=1;fontSize=11;fontStyle=1;fontColor=#ED7100;align=left;" vertex="1" parent="legend"><mxGeometry x="390" y="8" width="170" height="18" as="geometry"/></mxCell><mxCell id="lg_note" value="Flows ①–⑨ match the CI/CD pipeline stages. KMS wraps SSM SecureStrings + the SNS topic (not drawn — plumbing)." style="text;html=1;fontSize=11;fontStyle=0;fontColor=#57606A;align=left;" vertex="1" parent="legend"><mxGeometry x="590" y="8" width="800" height="18" as="geometry"/></mxCell></root></mxGraphModel></diagram></mxfile></script>
+    <script>
+      (function () {
+        var xml = document.getElementById('drawio-arch-xml').textContent;
+        var el = document.querySelector('.drawio-embed .mxgraph');
+        el.setAttribute('data-mxgraph', JSON.stringify({
+          highlight: '#4a9eed',
+          nav: true,
+          resize: true,
+          toolbar: 'zoom layers lightbox',
+          edit: '_blank',
+          xml: xml
+        }));
+      })();
+    </script>
+    <script src="https://viewer.diagrams.net/js/viewer-static.min.js"></script>
 
-      <!-- ============ Zone: GitHub Cloud ============ -->
-      <g id="z-gh">
-        <rect x="20" y="20" width="1120" height="200" rx="6" class="zone-fill-gh"/>
-        <rect x="20" y="20" width="1120" height="200" rx="6" class="zone-github"/>
-        <rect x="20" y="18" width="140" height="26" rx="3" class="zone-github" fill="#24292f"/>
-        <text x="35" y="35" class="zone-label" fill="#ffffff">GitHub Cloud</text>
-
-        <!-- Developer -->
-        <g transform="translate(45,70)" filter="url(#ds)">
-          <rect width="170" height="100" rx="3" class="svc-box"/>
-          <rect x="12" y="12" width="40" height="40" rx="4" class="cat-github"/>
-          <text x="32" y="36" class="glyph-txt">dev</text>
-          <text x="62" y="27" class="svc-title">Developer</text>
-          <text x="62" y="45" class="svc-sub">git push main</text>
-          <text x="12" y="76" class="svc-sub">Signed commits · SSH auth</text>
-          <text x="12" y="92" class="svc-tag">workspace: flask_Practice</text>
-        </g>
-
-        <!-- GitHub Repo -->
-        <g transform="translate(245,70)" filter="url(#ds)">
-          <rect width="200" height="100" rx="3" class="svc-box"/>
-          <rect x="12" y="12" width="40" height="40" rx="4" class="cat-github"/>
-          <text x="32" y="36" class="glyph-txt">git</text>
-          <text x="62" y="27" class="svc-title">GitHub Repo</text>
-          <text x="62" y="45" class="svc-sub">immrdg/flask_Practice</text>
-          <text x="12" y="76" class="svc-sub">on: push · branches: [main]</text>
-          <text x="12" y="92" class="svc-tag">paths: app / build / deploy</text>
-        </g>
-
-        <!-- GitHub Actions Runner + stage pills -->
-        <g transform="translate(475,50)" filter="url(#ds)">
-          <rect width="645" height="150" rx="3" class="svc-box"/>
-          <rect x="12" y="12" width="40" height="40" rx="4" class="cat-github"/>
-          <text x="32" y="36" class="glyph-txt">gha</text>
-          <text x="62" y="27" class="svc-title">GitHub Actions · CI/CD workflow</text>
-          <text x="62" y="45" class="svc-sub">ubuntu-latest · service: mongo:7 · run-scoped GITHUB_TOKEN</text>
-          <!-- Stage pills row 1 -->
-          <g font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, monospace">
-            <g transform="translate(12,70)"><rect width="72" height="20" rx="10" class="svc-box"/><text x="36" y="14" text-anchor="middle" font-size="10.5" fill="#232f3e" font-weight="600">checkout</text></g>
-            <g transform="translate(90,70)"><rect width="60" height="20" rx="10" class="svc-box"/><text x="30" y="14" text-anchor="middle" font-size="10.5" fill="#232f3e" font-weight="600">install</text></g>
-            <g transform="translate(156,70)"><rect width="52" height="20" rx="10" class="svc-box"/><text x="26" y="14" text-anchor="middle" font-size="10.5" fill="#232f3e" font-weight="600">test</text></g>
-            <g transform="translate(214,70)"><rect width="90" height="20" rx="10" class="svc-box"/><text x="45" y="14" text-anchor="middle" font-size="10.5" fill="#232f3e" font-weight="600">tf outputs</text></g>
-            <g transform="translate(310,70)"><rect width="54" height="20" rx="10" class="svc-box"/><text x="27" y="14" text-anchor="middle" font-size="10.5" fill="#232f3e" font-weight="600">build</text></g>
-            <g transform="translate(370,70)"><rect width="54" height="20" rx="10" class="svc-box"/><text x="27" y="14" text-anchor="middle" font-size="10.5" fill="#232f3e" font-weight="600">push</text></g>
-            <g transform="translate(430,70)"><rect width="66" height="20" rx="10" class="svc-box"/><text x="33" y="14" text-anchor="middle" font-size="10.5" fill="#232f3e" font-weight="600">deploy</text></g>
-            <g transform="translate(502,70)"><rect width="62" height="20" rx="10" class="svc-box"/><text x="31" y="14" text-anchor="middle" font-size="10.5" fill="#232f3e" font-weight="600">verify</text></g>
-            <g transform="translate(570,70)"><rect width="62" height="20" rx="10" class="svc-box"/><text x="31" y="14" text-anchor="middle" font-size="10.5" fill="#232f3e" font-weight="600">notify</text></g>
-          </g>
-          <text x="12" y="112" class="svc-sub">Auth: static IAM user access keys (flask-practice-gha) via aws-actions/configure-aws-credentials</text>
-          <text x="12" y="128" class="svc-tag">Reads remote state · builds image · dispatches SSM · publishes SNS</text>
-          <text x="12" y="142" class="svc-tag">workflow_dispatch available for out-of-band forced runs</text>
-        </g>
-
-        <!-- Orthogonal arrows: dev → repo → runner -->
-        <path d="M215,120 L245,120" class="flow-control" marker-end="url(#ah-c)"/>
-        <path d="M445,120 L475,120" class="flow-control" marker-end="url(#ah-c)"/>
-      </g>
-
-      <!-- ============ Zone: AWS Cloud (us-east-1) ============ -->
-      <g id="z-aws">
-        <rect x="20" y="250" width="880" height="630" rx="6" class="zone-fill-aws"/>
-        <rect x="20" y="250" width="880" height="630" rx="6" class="zone-aws"/>
-        <!-- AWS Cloud corner label -->
-        <rect x="20" y="248" width="160" height="26" rx="3" fill="#232f3e"/>
-        <text x="35" y="266" class="zone-label" fill="#ffffff">AWS Cloud · us-east-1</text>
-        <text x="195" y="266" class="zone-label">managed by terraform · state in S3</text>
-
-        <!-- Row 1: S3 tfstate, ECR, SNS, KMS -->
-        <g transform="translate(45,300)" filter="url(#ds)">
-          <rect width="195" height="90" rx="3" class="svc-box"/>
-          <rect x="10" y="10" width="40" height="40" rx="4" class="cat-storage"/>
-          <text x="30" y="34" class="glyph-txt">S3</text>
-          <text x="58" y="25" class="svc-title">Amazon S3</text>
-          <text x="58" y="42" class="svc-sub">Remote TF State</text>
-          <text x="10" y="68" class="svc-tag">gitops-pipeline-tfstate-…</text>
-          <text x="10" y="82" class="svc-tag">versioned · AES256 · PAB</text>
-        </g>
-        <g transform="translate(260,300)" filter="url(#ds)">
-          <rect width="195" height="90" rx="3" class="svc-box"/>
-          <rect x="10" y="10" width="40" height="40" rx="4" class="cat-container"/>
-          <text x="30" y="34" class="glyph-txt">ECR</text>
-          <text x="58" y="25" class="svc-title">Amazon ECR</text>
-          <text x="58" y="42" class="svc-sub">flask-practice repo</text>
-          <text x="10" y="68" class="svc-tag">scan-on-push · lifecycle</text>
-          <text x="10" y="82" class="svc-tag">expire untagged &gt; 7d</text>
-        </g>
-        <g transform="translate(475,300)" filter="url(#ds)">
-          <rect width="195" height="90" rx="3" class="svc-box"/>
-          <rect x="10" y="10" width="40" height="40" rx="4" class="cat-mgmt"/>
-          <text x="30" y="34" class="glyph-txt">SNS</text>
-          <text x="58" y="25" class="svc-title">Amazon SNS</text>
-          <text x="58" y="42" class="svc-sub">flask-practice-ci</text>
-          <text x="10" y="68" class="svc-tag">success + failure emails</text>
-          <text x="10" y="82" class="svc-tag">names failed stage</text>
-        </g>
-        <g transform="translate(690,300)" filter="url(#ds)">
-          <rect width="195" height="90" rx="3" class="svc-box"/>
-          <rect x="10" y="10" width="40" height="40" rx="4" class="cat-security"/>
-          <text x="30" y="34" class="glyph-txt">KMS</text>
-          <text x="58" y="25" class="svc-title">AWS KMS</text>
-          <text x="58" y="42" class="svc-sub">alias/aws/ssm · alias/aws/sns</text>
-          <text x="10" y="68" class="svc-tag">SecureString decrypt</text>
-          <text x="10" y="82" class="svc-tag">SNS topic KMS</text>
-        </g>
-
-        <!-- Row 2: SSM Documents, Ephemeral Token, Parameter Store, IAM instance profile -->
-        <g transform="translate(45,420)" filter="url(#ds)">
-          <rect width="195" height="110" rx="3" class="svc-box"/>
-          <rect x="10" y="10" width="40" height="40" rx="4" class="cat-mgmt"/>
-          <text x="30" y="34" class="glyph-txt">SSM</text>
-          <text x="58" y="25" class="svc-title">SSM Documents</text>
-          <text x="58" y="42" class="svc-sub">AWS-ApplyAnsible-</text>
-          <text x="58" y="56" class="svc-sub">Playbooks</text>
-          <text x="10" y="82" class="svc-tag">send-command by instance ID</text>
-          <text x="10" y="96" class="svc-tag">GitHub SourceInfo + tokenInfo</text>
-        </g>
-        <g transform="translate(260,420)" filter="url(#ds)">
-          <rect width="195" height="110" rx="3" class="svc-box"/>
-          <rect x="10" y="10" width="40" height="40" rx="4" class="cat-security"/>
-          <text x="30" y="34" class="glyph-txt">SS</text>
-          <text x="58" y="25" class="svc-title">Ephemeral GH Token</text>
-          <text x="58" y="42" class="svc-sub">SSM SecureString</text>
-          <text x="10" y="68" class="svc-tag">/flask-practice/</text>
-          <text x="10" y="82" class="svc-tag">gha_gh_token</text>
-          <text x="10" y="96" class="svc-tag">rewritten per run · KMS enc</text>
-        </g>
-        <g transform="translate(475,420)" filter="url(#ds)">
-          <rect width="195" height="110" rx="3" class="svc-box"/>
-          <rect x="10" y="10" width="40" height="40" rx="4" class="cat-mgmt"/>
-          <text x="30" y="34" class="glyph-txt">PS</text>
-          <text x="58" y="25" class="svc-title">SSM Parameter Store</text>
-          <text x="58" y="42" class="svc-sub">runtime app secrets</text>
-          <text x="10" y="68" class="svc-tag">/flask-practice/mongo_uri</text>
-          <text x="10" y="82" class="svc-tag">/flask-practice/secret_key</text>
-          <text x="10" y="96" class="svc-tag">both SecureString</text>
-        </g>
-        <g transform="translate(690,420)" filter="url(#ds)">
-          <rect width="195" height="110" rx="3" class="svc-box"/>
-          <rect x="10" y="10" width="40" height="40" rx="4" class="cat-security"/>
-          <text x="30" y="34" class="glyph-txt">IAM</text>
-          <text x="58" y="25" class="svc-title">IAM · Access</text>
-          <text x="58" y="42" class="svc-sub">GHA user + EC2 role</text>
-          <text x="10" y="68" class="svc-tag">GHA: managed policy</text>
-          <text x="10" y="82" class="svc-tag">EC2: SSM + ECR read +</text>
-          <text x="10" y="96" class="svc-tag">GetParameter (scoped)</text>
-        </g>
-
-        <!-- Row 3: EC2 outer container -->
-        <g transform="translate(45,560)" filter="url(#ds)">
-          <rect width="840" height="290" rx="4" class="svc-box"/>
-          <rect x="12" y="12" width="40" height="40" rx="4" class="cat-compute"/>
-          <text x="32" y="36" class="glyph-txt">EC2</text>
-          <text x="62" y="27" class="svc-title">EC2 · t3.micro · Amazon Linux 2023</text>
-          <text x="62" y="45" class="svc-sub">i-052e42e5564385c80 · EIP 52.201.85.112 · IMDSv2 only · SG :5000/tcp</text>
-
-          <!-- Nested boxes inside EC2 -->
-          <g transform="translate(20,70)">
-            <rect width="195" height="90" rx="3" class="svc-box"/>
-            <rect x="8" y="8" width="34" height="34" rx="4" class="cat-security"/>
-            <text x="25" y="30" class="glyph-txt" font-size="8">ROLE</text>
-            <text x="48" y="22" class="svc-title" font-size="11">Instance IAM Role</text>
-            <text x="48" y="38" class="svc-sub" font-size="10">flask-practice-ec2</text>
-            <text x="8" y="60" class="svc-tag">SSMManagedInstanceCore</text>
-            <text x="8" y="72" class="svc-tag">EC2ContainerRegistryReadOnly</text>
-            <text x="8" y="84" class="svc-tag">GetParameter (scoped)</text>
-          </g>
-          <g transform="translate(230,70)">
-            <rect width="195" height="90" rx="3" class="svc-box"/>
-            <rect x="8" y="8" width="34" height="34" rx="4" class="cat-mgmt"/>
-            <text x="25" y="30" class="glyph-txt" font-size="8">AGENT</text>
-            <text x="48" y="22" class="svc-title" font-size="11">SSM Agent</text>
-            <text x="48" y="38" class="svc-sub" font-size="10">amazon-ssm-agent</text>
-            <text x="8" y="60" class="svc-tag">Fetches playbook</text>
-            <text x="8" y="72" class="svc-tag">Installs Ansible</text>
-            <text x="8" y="84" class="svc-tag">Executes on target</text>
-          </g>
-          <g transform="translate(440,70)">
-            <rect width="380" height="90" rx="3" class="svc-box"/>
-            <rect x="8" y="8" width="34" height="34" rx="4" class="cat-container"/>
-            <text x="25" y="30" class="glyph-txt" font-size="8">CTR</text>
-            <text x="48" y="22" class="svc-title" font-size="11">Docker container · flask_app</text>
-            <text x="48" y="38" class="svc-sub" font-size="10">image = ECR:&lt;12-char commit SHA&gt;</text>
-            <text x="8" y="60" class="svc-tag">port map: 5000:5000 · restart: unless-stopped</text>
-            <text x="8" y="72" class="svc-tag">env: MONGO_URI, SECRET_KEY (from Parameter Store)</text>
-            <text x="8" y="84" class="svc-tag">gunicorn → Flask · /health returns {"status": "healthy"}</text>
-          </g>
-
-          <!-- Ansible playbook strip -->
-          <g transform="translate(20,180)">
-            <rect width="800" height="94" rx="3" class="svc-box"/>
-            <rect x="8" y="8" width="34" height="34" rx="4" class="cat-mgmt"/>
-            <text x="25" y="30" class="glyph-txt" font-size="8">ANS</text>
-            <text x="48" y="22" class="svc-title" font-size="11">Ansible playbook · infra/ansible/deploy.yml (runs on-target)</text>
-            <text x="48" y="38" class="svc-sub" font-size="10">connection: local · become: true · gathers no facts</text>
-            <!-- Playbook step pills -->
-            <g font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, monospace">
-              <g transform="translate(8,52)"><rect width="120" height="18" rx="9" class="svc-box"/><text x="60" y="12" text-anchor="middle" font-size="9.5" fill="#232f3e" font-weight="600">1 · ECR login</text></g>
-              <g transform="translate(132,52)"><rect width="115" height="18" rx="9" class="svc-box"/><text x="58" y="12" text-anchor="middle" font-size="9.5" fill="#232f3e" font-weight="600">2 · docker pull</text></g>
-              <g transform="translate(251,52)"><rect width="135" height="18" rx="9" class="svc-box"/><text x="68" y="12" text-anchor="middle" font-size="9.5" fill="#232f3e" font-weight="600">3 · stop/rm old</text></g>
-              <g transform="translate(390,52)"><rect width="115" height="18" rx="9" class="svc-box"/><text x="58" y="12" text-anchor="middle" font-size="9.5" fill="#232f3e" font-weight="600">4 · run new</text></g>
-              <g transform="translate(509,52)"><rect width="145" height="18" rx="9" class="svc-box"/><text x="72" y="12" text-anchor="middle" font-size="9.5" fill="#232f3e" font-weight="600">5 · wait /health</text></g>
-              <g transform="translate(658,52)"><rect width="120" height="18" rx="9" class="svc-box"/><text x="60" y="12" text-anchor="middle" font-size="9.5" fill="#232f3e" font-weight="600">6 · prune</text></g>
-            </g>
-            <text x="8" y="86" class="svc-tag">Secrets fetched from Parameter Store on-target · never touch the CI runner or CloudTrail command params</text>
-          </g>
-        </g>
-      </g>
-
-      <!-- ============ Zone: External ============ -->
-      <g id="z-ext">
-        <rect x="920" y="250" width="220" height="630" rx="6" class="zone-fill-ext"/>
-        <rect x="920" y="250" width="220" height="630" rx="6" class="zone-ext"/>
-        <rect x="920" y="248" width="90" height="26" rx="3" fill="#8c919e"/>
-        <text x="935" y="266" class="zone-label" fill="#ffffff">External</text>
-
-        <!-- MongoDB Atlas -->
-        <g transform="translate(940,310)" filter="url(#ds)">
-          <rect width="180" height="115" rx="3" class="svc-box"/>
-          <rect x="10" y="10" width="40" height="40" rx="4" class="cat-atlas"/>
-          <text x="30" y="34" class="glyph-txt">mdb</text>
-          <text x="58" y="25" class="svc-title">MongoDB Atlas</text>
-          <text x="58" y="42" class="svc-sub">M0 · cluster hv-aws</text>
-          <text x="10" y="68" class="svc-tag">studentDB</text>
-          <text x="10" y="82" class="svc-tag">mongodb+srv://</text>
-          <text x="10" y="96" class="svc-tag">TLS 1.2+ via SRV</text>
-          <text x="10" y="108" class="svc-tag">certifi CA bundle</text>
-        </g>
-
-        <!-- Email recipients -->
-        <g transform="translate(940,445)" filter="url(#ds)">
-          <rect width="180" height="90" rx="3" class="svc-box"/>
-          <rect x="10" y="10" width="40" height="40" rx="4" class="cat-mgmt"/>
-          <text x="30" y="34" class="glyph-txt">✉</text>
-          <text x="58" y="25" class="svc-title">Email recipients</text>
-          <text x="58" y="42" class="svc-sub">SNS email subscribers</text>
-          <text x="10" y="68" class="svc-tag">confirm-once flow</text>
-          <text x="10" y="82" class="svc-tag">tailored subject + body</text>
-        </g>
-
-        <!-- End user -->
-        <g transform="translate(940,555)" filter="url(#ds)">
-          <rect width="180" height="90" rx="3" class="svc-box"/>
-          <rect x="10" y="10" width="40" height="40" rx="4" class="cat-user"/>
-          <text x="30" y="34" class="glyph-txt">usr</text>
-          <text x="58" y="25" class="svc-title">End user (browser)</text>
-          <text x="58" y="42" class="svc-sub">HTTP → EIP:5000</text>
-          <text x="10" y="68" class="svc-tag">GET /</text>
-          <text x="10" y="82" class="svc-tag">GET /health · POST /add …</text>
-        </g>
-      </g>
-
-      <!-- ============ Cross-zone flows (orthogonal, numbered) ============ -->
-
-      <!-- 1  Runner → S3 (read tf outputs) -->
-      <path d="M550,220 L550,260 L142,260 L142,300" class="flow-data" marker-end="url(#ah-d)"/>
-      <circle cx="142" cy="270" r="10" class="step-c"/>
-      <text x="142" y="270" class="step-num">1</text>
-
-      <!-- 2  Runner → ECR (docker push) -->
-      <path d="M700,220 L700,260 L358,260 L358,300" class="flow-control" marker-end="url(#ah-c)"/>
-      <circle cx="358" cy="270" r="10" class="step-c"/>
-      <text x="358" y="270" class="step-num">2</text>
-
-      <!-- 3  Runner → SSM Documents (send-command) -->
-      <path d="M820,220 L820,405 L142,405 L142,420" class="flow-control" marker-end="url(#ah-c)"/>
-      <circle cx="820" cy="410" r="10" class="step-c"/>
-      <text x="820" y="410" class="step-num">3</text>
-
-      <!-- 3b  Runner → Ephemeral GH Token (secure put-parameter) -->
-      <path d="M900,220 L900,405 L357,405 L357,420" class="flow-secure" marker-end="url(#ah-s)"/>
-
-      <!-- 4  SSM Docs → EC2 instance (dispatch via SSM Agent) -->
-      <path d="M142,530 L142,550 L200,550 L200,560" class="flow-control" marker-end="url(#ah-c)"/>
-      <circle cx="200" cy="550" r="10" class="step-c"/>
-      <text x="200" y="550" class="step-num">4</text>
-
-      <!-- 5  EC2 → ECR (docker pull via IAM role) -->
-      <path d="M357,390 L357,410 L500,410 L500,560" class="flow-data" marker-end="url(#ah-d)"/>
-      <circle cx="500" cy="410" r="10" class="step-c"/>
-      <text x="500" y="410" class="step-num">5</text>
-
-      <!-- 6  EC2 → Parameter Store (fetch MONGO_URI / SECRET_KEY) -->
-      <path d="M572,530 L572,555" class="flow-data" marker-end="url(#ah-d)"/>
-      <circle cx="572" cy="540" r="10" class="step-c"/>
-      <text x="572" y="540" class="step-num">6</text>
-
-      <!-- 7  EC2 → MongoDB Atlas (TLS) -->
-      <path d="M885,650 L910,650 L910,368 L940,368" class="flow-data" marker-end="url(#ah-d)"/>
-      <circle cx="910" cy="510" r="10" class="step-c"/>
-      <text x="910" y="510" class="step-num">7</text>
-
-      <!-- 8  Runner → SNS (publish) → Email -->
-      <path d="M950,220 L950,255 L572,255 L572,300" class="flow-notify" marker-end="url(#ah-n)"/>
-      <circle cx="720" cy="255" r="10" class="step-c"/>
-      <text x="720" y="255" class="step-num">8</text>
-      <path d="M670,340 L900,340 L900,470 L940,470" class="flow-notify" marker-end="url(#ah-n)"/>
-
-      <!-- 9  End user → EC2 (HTTP :5000) -->
-      <path d="M940,595 L900,595 L900,720 L885,720" class="flow-control" marker-end="url(#ah-c)"/>
-      <circle cx="900" cy="720" r="10" class="step-c"/>
-      <text x="900" y="720" class="step-num">9</text>
-
-      <!-- KMS decrypt indicators -->
-      <path d="M787,345 L787,395 L720,395 L720,420" class="flow-secure"/>
-      <path d="M690,345 L690,395" class="flow-secure"/>
-
-      <!-- ============ Numbered step legend ============ -->
-      <g transform="translate(40,830)">
-        <text x="0" y="14" class="svc-title" font-size="12">Flow reference</text>
-      </g>
-      <g transform="translate(40,850)" font-size="10.5">
-        <text x="0" y="12" class="svc-sub">1 · Runner reads Terraform outputs from S3 · 2 · pushes image to ECR · 3 · sends AWS-ApplyAnsiblePlaybooks command · 3b · stashes GITHUB_TOKEN as SecureString</text>
-        <text x="0" y="26" class="svc-sub">4 · SSM Agent runs playbook on EC2 · 5 · docker pull from ECR (IAM role) · 6 · Ansible reads Mongo URI + SECRET_KEY · 7 · app connects to Atlas · 8 · SNS notify · 9 · end user hits /health</text>
-      </g>
-    </svg>
-
-    <div class="arch-legend">
-      <span class="l-control"><i></i> control / API</span>
-      <span class="l-data"><i></i> data / pull</span>
-      <span class="l-notify"><i></i> notification</span>
-      <span class="l-secure"><i></i> secure / KMS-encrypted</span>
+    <p class="arch-note">
+      Rendered live by the <a href="https://www.drawio.com/doc/faq/embed-mode" target="_blank" rel="noopener">draw.io viewer</a> using the official
+      AWS Architecture (AWS4) icon set. Numbered flows ①–⑨ trace the CI/CD path from <code>git push</code> to a live container behind an Elastic IP.
+    </p>
+    <div class="arch-actions">
+      <a href="https://app.diagrams.net/" target="_blank" rel="noopener">open in draw.io</a>
+      <span class="muted">drag inside the diagram to pan · scroll to zoom · use the toolbar to fit-to-page or open the lightbox</span>
     </div>
   </section>
 
